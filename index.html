@@ -124,7 +124,7 @@
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      border: 3px solid #fff;
+      border: 2px solid #1a1a1a;
     }
 
     .status-dot.online { background: #43b581; }
@@ -212,15 +212,27 @@
       const richActivity = activities.find(act => act.type === 0 || act.type === 2);
 
       container.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          font-family: 'Fira Code', monospace;
+          border: 1px solid #333;
+          border-radius: 10px;
+          padding: 1em;
+          max-width: 400px;
+          background: #1a1a1a;
+          color: #f0f0f0;
+          box-shadow: 0 0 20px #ff660033 inset;
+        ">
           <div class="avatar-wrapper">
             <img src="${avatarUrl}" class="discord-avatar">
             <span class="status-dot ${discord_status}"></span>
           </div>
           <div>
-            <strong style="font-size:1.1em;">${discord_user.username}</strong>
-            <div id="custom-status" style="color:#555;font-size:0.9em;"></div>
-            <div id="activity" style="color:#333;font-size:0.9em;margin-top:4px;"></div>
+            <strong style="font-size: 1.2em; color: #ffa64d;">${discord_user.username}</strong>
+            <div id="custom-status" style="color: #ccc; font-size: 0.95em; margin-top: 4px;"></div>
+            <div id="activity" style="color: #ff9933; font-size: 0.95em; margin-top: 4px;"></div>
           </div>
         </div>
       `;
