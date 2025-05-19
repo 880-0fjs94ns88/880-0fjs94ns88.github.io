@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Errorrail's Portfolio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Fira Code', monospace;
@@ -104,14 +104,47 @@
       border-top: 2px solid #ff6600;
     }
 
-    /* Discord embed styling */
-    #discord-embed {
+    .discord-embed {
       display: flex;
-      justify-content: center;
-      margin: 2em 0;
+      align-items: center;
+      gap: 1em;
+      background: #111;
+      padding: 1em;
+      border: 1px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 0 15px #222;
     }
 
-    /* New Discord-specific styles will be added by JavaScript */
+    .discord-embed img {
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+    }
+
+    .discord-info h3 {
+      margin: 0;
+      font-size: 1.2em;
+      color: #ffa64d;
+    }
+
+    .discord-status {
+      font-size: 0.9em;
+      margin-top: 0.3em;
+      color: #aaa;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .online { background: #43b581; }
+    .idle { background: #faa61a; }
+    .dnd { background: #f04747; }
+    .offline { background: #747f8d; }
   </style>
 </head>
 <body>
@@ -127,10 +160,9 @@
   </header>
 
   <main>
-    <section id="discord-status">
-      <div id="discord-embed">
-        Loading Discord status...
-      </div>
+    <section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
+      <!-- Added container div for JS to update -->
+      <div id="discord-embed"></div>
     </section>
 
     <section id="projects">
@@ -169,13 +201,13 @@
   </footer>
 
 <script>
-  const userId = "1124022735350268064"; // Replace with your actual Discord ID
+  const userId = "1124022735350268064"; // 👈 Replace with your actual Discord ID
 
-  const statusColors = {
-    online: "#43b581",
-    idle: "#faa61a",
-    dnd: "#f04747",
-    offline: "#747f8d"
+  const statusMap = {
+    online: "🟢 Online",
+    idle: "🌙 Idle",
+    dnd: "⛔ Do Not Disturb",
+    offline: "⚫ Offline"
   };
 
   async function updateDiscordStatus() {
@@ -189,107 +221,54 @@
 
       const { discord_user, discord_status, activities } = json.data;
 
+      // Avatar URL
       const avatarUrl = `https://cdn.discordapp.com/avatars/${discord_user.id}/${discord_user.avatar}.png?size=128`;
 
-      // Create a Discord profile card appearance instead of status
+      // Custom status activity (type 4)
+      const custom = activities.find(act => act.type === 4);
+
+      // Spotify or Game activity (type 0 = game, type 2 = listening)
+      const richActivity = activities.find(act => act.type === 0 || act.type === 2);
+
+      // Build the embed HTML
       container.innerHTML = `
-        <div class="discord-profile-card">
-          <div class="profile-avatar-wrapper">
-            <img src="${avatarUrl}" alt="Discord Avatar" class="profile-avatar" />
-          </div>
-          <div class="profile-info">
-            <div class="profile-username-container">
-              <div class="profile-username">errorrail</div>
-              <span class="profile-clan">❤️Xeno</span>
-            </div>
-            <div class="profile-status">
-              <span class="status-dot" style="background-color: ${statusColors[discord_status] || statusColors.offline};"></span>
-              <span class="status-text">1# skid</span>
-            </div>
+        <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
+          <img src="${avatarUrl}" style="width:60px;height:60px;border-radius:50%;">
+          <div>
+            <strong style="font-size:1.1em;">${discord_user.username}</strong>
+            <div style="margin:4px 0;">${statusMap[discord_status] || "Unknown"}</div>
+            <div id="custom-status" style="color:#555;font-size:0.9em;"></div>
+            <div id="activity" style="color:#333;font-size:0.9em;margin-top:4px;"></div>
           </div>
         </div>
       `;
 
-      // Add specific CSS to make it look like the Discord profile card
-      const style = document.createElement('style');
-      style.textContent = `
-        #discord-embed {
-          display: flex;
-          justify-content: center;
-          margin: 2em 0;
+      // Set custom status text and emoji
+      const statusEl = document.getElementById("custom-status");
+      if (custom && custom.state) {
+        let emojiHTML = "";
+        if (custom.emoji) {
+          if (custom.emoji.id) {
+            const ext = custom.emoji.animated ? "gif" : "png";
+            const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
+            emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`;
+          } else {
+            emojiHTML = `${custom.emoji.name} `;
+          }
         }
-        
-        .discord-profile-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-          border-radius: 8px;
-          padding: 16px;
-          width: 320px;
-          background: #232428;
-          color: #fff;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-        
-        .profile-avatar-wrapper {
-          position: relative;
-        }
-        
-        .profile-avatar {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          border: 4px solid #ffa500;
-        }
-        
-        .profile-info {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        
-        .profile-username-container {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .profile-username {
-          font-size: 28px;
-          color: #fff;
-          font-weight: 600;
-        }
-        
-        .profile-clan {
-          color: #fff;
-          font-size: 16px;
-          margin-left: 2px;
-        }
-        
-        .profile-status {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .status-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          display: inline-block;
-        }
-        
-        .status-text {
-          color: #b9bbbe;
-          font-size: 16px;
-        }
-      `;
-      document.head.appendChild(style);
+        statusEl.innerHTML = emojiHTML + custom.state;
+      }
+
+      // Set rich activity text
+      const activityEl = document.getElementById("activity");
+      if (richActivity) {
+        const verb = richActivity.type === 2 ? "Playing" : "Doing";
+        activityEl.textContent = `${verb}: ${richActivity.name}`;
+      }
 
     } catch (err) {
       console.error("Failed to load status:", err);
-      container.textContent = "⚠️ Failed to load Discord profile.";
+      container.textContent = "⚠️ Failed to load Discord status.";
     }
   }
 
