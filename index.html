@@ -134,6 +134,20 @@
       0%, 100% {opacity: 1;}
       50% {opacity: 0;}
     }
+
+    /* Access denied styling */
+    #access-denied {
+      display: flex;
+      height: 100vh;
+      background: #111;
+      color: #ff3300;
+      font-family: monospace, monospace;
+      font-size: 3em;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -187,5 +201,34 @@
   <footer>
     <p>Made with 💾 on Neocities — © 2025 Errorrail</p>
   </footer>
+
+  <script>
+    async function checkIP() {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        const userIP = data.ip;
+        if (userIP !== '104.28.215.166') {
+          document.body.innerHTML = `
+            <div id="access-denied">
+              <div>403 Forbidden</div>
+            </div>`;
+          document.body.style.background = '#111';
+          document.body.style.color = '#ff3300';
+          document.body.style.margin = '0';
+          document.body.style.fontFamily = 'monospace, monospace';
+          document.body.style.display = 'flex';
+          document.body.style.justifyContent = 'center';
+          document.body.style.alignItems = 'center';
+          document.body.style.height = '100vh';
+        }
+      } catch (e) {
+        console.error("Could not verify IP:", e);
+        // Optionally block access if IP check fails:
+        // document.body.innerHTML = '<div id="access-denied"><div>403 Forbidden</div></div>';
+      }
+    }
+    checkIP();
+  </script>
 </body>
 </html>
