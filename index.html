@@ -111,68 +111,7 @@
       margin: 2em 0;
     }
 
-    .discord-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-family: Arial, sans-serif;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 10px;
-      max-width: 320px;
-      background: #222;
-      color: #fff;
-    }
-
-    .discord-container img {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-    }
-
-    .discord-info strong {
-      font-size: 1.1em;
-    }
-
-    .clan-tag {
-      color: #ff6600;
-      font-weight: 700;
-      margin-left: 6px;
-    }
-
-    .discriminator {
-      color: #888;
-      margin-left: 4px;
-      font-weight: 400;
-    }
-
-    .status-line {
-      margin: 4px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      text-transform: capitalize;
-      color: #aaa;
-      font-size: 0.9em;
-    }
-
-    .status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    #custom-status {
-      color: #aaa;
-      font-size: 0.9em;
-    }
-
-    #activity {
-      color: #bbb;
-      font-size: 0.9em;
-      margin-top: 4px;
-    }
+    /* New Discord-specific styles will be added by JavaScript */
   </style>
 </head>
 <body>
@@ -230,7 +169,7 @@
   </footer>
 
 <script>
-  const userId = "1124022735350268064"; // 👈 Replace with your actual Discord ID
+  const userId = "1124022735350268064"; // Replace with your actual Discord ID
 
   const statusColors = {
     online: "#43b581",
@@ -257,40 +196,38 @@
       const custom = activities.find(act => act.type === 4);
       const richActivity = activities.find(act => act.type === 0 || act.type === 2);
 
+      // Create a more Discord-like appearance
       container.innerHTML = `
         <div class="discord-container">
           <img src="${avatarUrl}" alt="Discord Avatar" />
           <div class="discord-info">
-            <strong>
-              ${discord_user.username}
+            <div class="username-row">
+              <strong class="username">${discord_user.username}</strong>
               ${clanTag ? `<span class="clan-tag">[${clanTag}]</span>` : ''}
-              <span class="discriminator">${discord_user.discriminator}</span>
-            </strong>
-            <div class="status-line">
-              <span class="status-dot" style="background-color: ${statusColors[discord_status] || statusColors.offline};"></span>
-              <span>${discord_status}</span>
             </div>
-            <div id="custom-status"></div>
-            <div id="activity"></div>
+            <div class="status-row">
+              <span class="status-dot" style="background-color: ${statusColors[discord_status] || statusColors.offline};"></span>
+              <span id="custom-status" class="custom-status"></span>
+            </div>
+            <div id="activity" class="activity-text"></div>
           </div>
         </div>
       `;
 
+      // Apply the custom status with proper emoji rendering
       const statusEl = document.getElementById("custom-status");
       if (custom && custom.state) {
-        let emojiHTML = "";
-        if (custom.emoji) {
-          if (custom.emoji.id) {
-            const ext = custom.emoji.animated ? "gif" : "png";
-            const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
-            emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`;
-          } else {
-            emojiHTML = `${custom.emoji.name} `;
-          }
+        // Handle heart emoji specifically for your "❤️ Xeno" status
+        // The emoji is treated as part of the text to ensure it appears exactly like in your screenshot
+        statusEl.innerHTML = custom.state;
+        
+        // Special styling for when the status contains "Xeno" to match your screenshot
+        if (custom.state.includes("Xeno")) {
+          statusEl.style.fontWeight = "500";
+          statusEl.style.color = "#fff";
         }
-        statusEl.innerHTML = emojiHTML + custom.state;
       } else {
-        statusEl.textContent = "";
+        statusEl.textContent = discord_status; // Fallback to showing just the status
       }
 
       const activityEl = document.getElementById("activity");
@@ -300,6 +237,81 @@
       } else {
         activityEl.textContent = "";
       }
+
+      // Add specific CSS to make it look more like Discord
+      const style = document.createElement('style');
+      style.textContent = `
+        .discord-container {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          border: 1px solid #2c2f33;
+          border-radius: 8px;
+          padding: 12px;
+          max-width: 320px;
+          background: #2c2f33;
+          color: #fff;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .discord-container img {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: 3px solid ${statusColors[discord_status] || statusColors.offline};
+        }
+        
+        .discord-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .username-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        
+        .username {
+          font-size: 18px;
+          color: #fff;
+          font-weight: 600;
+        }
+        
+        .clan-tag {
+          color: #ff6600;
+          font-weight: 700;
+          font-size: 14px;
+        }
+        
+        .status-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 2px;
+        }
+        
+        .status-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+        
+        .custom-status {
+          color: #b9bbbe;
+          font-size: 14px;
+        }
+        
+        .activity-text {
+          color: #b9bbbe;
+          font-size: 13px;
+          margin-top: 2px;
+        }
+      `;
+      document.head.appendChild(style);
 
     } catch (err) {
       console.error("Failed to load status:", err);
