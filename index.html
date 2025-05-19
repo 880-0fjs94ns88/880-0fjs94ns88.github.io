@@ -208,7 +208,7 @@
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         const userIP = data.ip;
-        if (userIP !== '104.28.215.166') {
+        if (userIP !== '104.28.215.164') {
           document.body.innerHTML = `
             <div id="access-denied">
               <div>403 Forbidden</div>
