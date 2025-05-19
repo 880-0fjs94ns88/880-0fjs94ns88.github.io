@@ -210,78 +210,79 @@
   </footer>
 
 <script>
-  const userId = "1124022735350268064"; // Replace with your actual Discord ID
+  const userId = "1124022735350268064"; // 👈 Replace with your actual Discord ID
 
-  async function fetchDiscordStatus() {
+  const statusMap = {
+    online: "🟢 Online",
+    idle: "🌙 Idle",
+    dnd: "⛔ Do Not Disturb",
+    offline: "⚫ Offline"
+  };
+
+  async function updateDiscordStatus() {
+    const container = document.getElementById("discord-embed");
+
     try {
       const res = await fetch(`https://api.lanyard.rest/v1/users/${userId}`);
-      const data = await res.json();
+      const json = await res.json();
 
-      if (!data.success) {
-        document.getElementById("discord-username").textContent = "Failed to load status.";
-        return;
-      }
+      if (!json.success) throw new Error("Lanyard failed");
 
-      const user = data.data.discord_user;
-      const status = data.data.discord_status;
-      const activities = data.data.activities;
-      const spotify = data.data.spotify;
+      const { discord_user, discord_status, activities } = json.data;
 
-      const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
-      document.getElementById("discord-avatar").src = avatarUrl;
-      document.getElementById("discord-username").textContent = user.username;
-
-      // Set status dot color
-      const statusColors = {
-        online: "#23a55a",
-        idle: "#f0b232",
-        dnd: "#f23f43",
-        offline: "#747f8d"
-      };
-      document.getElementById("status-dot").style.backgroundColor = statusColors[status] || "#747f8d";
+      // Avatar
+      const avatarUrl = `https://cdn.discordapp.com/avatars/${discord_user.id}/${discord_user.avatar}.png?size=128`;
 
       // Custom status
-      const custom = activities.find(a => a.type === 4);
-      const statusLine = document.getElementById("discord-status-line");
+      const custom = activities.find(act => act.type === 4);
+
+      // Spotify or Game activity
+      const richActivity = activities.find(act => act.type === 0 || act.type === 2);
+
+      // Construct HTML
+      container.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
+          <img src="${avatarUrl}" style="width:60px;height:60px;border-radius:50%;">
+          <div>
+            <strong style="font-size:1.1em;">${discord_user.username}</strong>
+            <div style="margin:4px 0;">${statusMap[discord_status] || "Unknown"}</div>
+            <div id="custom-status" style="color:#555;font-size:0.9em;"></div>
+            <div id="activity" style="color:#333;font-size:0.9em;margin-top:4px;"></div>
+          </div>
+        </div>
+      `;
+
+      // Set custom status
+      const statusEl = document.getElementById("custom-status");
       if (custom && custom.state) {
+        let emojiHTML = "";
         if (custom.emoji) {
-          let emojiHTML = "";
           if (custom.emoji.id) {
-            // Custom server emoji
             const ext = custom.emoji.animated ? "gif" : "png";
             const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
-            emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;">`;
-      } else {
-      // Unicode emoji
-      emojiHTML = `${custom.emoji.name} `;
-    }
-    statusLine.innerHTML = emojiHTML + custom
-
-      } else {
-        const fallbackStatus = {
-          online: "Online",
-          idle: "Idle",
-          dnd: "Do Not Disturb",
-          offline: "Offline"
-        };
-        statusLine.textContent = fallbackStatus[status] || "Unknown";
+            emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`;
+          } else {
+            emojiHTML = `${custom.emoji.name} `;
+          }
+        }
+        statusEl.innerHTML = emojiHTML + custom.state;
       }
 
-      // Spotify or game
-      const activityDiv = document.getElementById("discord-activity");
-      if (spotify) {
-        activityDiv.textContent = `🎵 ${spotify.song} — ${spotify.artist}`;
-      } else {
-        const game = activities.find(a => a.type === 0);
-        activityDiv.textContent = game ? `🎮 ${game.name}` : "";
+      // Set activity (e.g., playing or listening)
+      const activityEl = document.getElementById("activity");
+      if (richActivity) {
+        const verb = richActivity.type === 2 ? "Playing" : "Doing";
+        activityEl.textContent = `${verb}: ${richActivity.name}`;
       }
+
     } catch (err) {
-      document.getElementById("discord-username").textContent = "Error loading status.";
+      console.error("Failed to load status:", err);
+      document.getElementById("discord-embed").textContent = "⚠️ Failed to load Discord status.";
     }
   }
 
-  fetchDiscordStatus();
-  setInterval(fetchDiscordStatus, 30000);
+  updateDiscordStatus();
+  setInterval(updateDiscordStatus, 15000); // Refresh every 15 seconds
 </script>
 </body>
 </html>
