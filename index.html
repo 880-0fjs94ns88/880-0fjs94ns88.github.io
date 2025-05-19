@@ -235,4 +235,26 @@
             const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
             emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`;
           } else {
-            emojiHTML =
+            emojiHTML = `${custom.emoji.name} `;
+          }
+        }
+        statusEl.innerHTML = emojiHTML + custom.state;
+      }
+
+      const activityEl = document.getElementById("activity");
+      if (richActivity) {
+        const verb = richActivity.type === 2 ? "Playing" : "Doing";
+        activityEl.textContent = `${verb}: ${richActivity.name}`;
+      }
+
+    } catch (err) {
+      console.error("Failed to load status:", err);
+      container.textContent = "⚠️ Failed to load Discord status.";
+    }
+  }
+
+  updateDiscordStatus();
+  setInterval(updateDiscordStatus, 15000);
+</script>
+</body>
+</html>
