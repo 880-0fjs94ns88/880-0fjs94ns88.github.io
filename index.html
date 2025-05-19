@@ -184,7 +184,7 @@
 
     <section id="addme">
       <h2>add me to your page</h2>
-      <p>Copy and paste this snippet to add a link to your site</p>
+      <p>here's my button. If u link me let me know so i can link u back</p>
       <a href="https://www.errorrail.dev/"><img class="button" loading="lazy" src="https://www.errorrail.dev/database/errorrail_button.gif"></a>
       <pre class="add-box" contenteditable="true" spellcheck="false">
 &lt;a href="https://www.errorrail.dev/"&gt;&lt;img class="button" loading="lazy" src="https://www.errorrail.dev/database/errorrail_button.gif"&gt;&lt;/a&gt;
@@ -197,33 +197,5 @@
     <p>© 2025 Errorrail</p>
   </footer>
 
-  <script>
-    async function checkIP() {
-      try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        const userIP = data.ip;
-        if (userIP !== '104.28.215.164') {
-          document.body.innerHTML = `
-            <div id="access-denied">
-              <div>403 Forbidden</div>
-            </div>`;
-          document.body.style.background = '#111';
-          document.body.style.color = '#ff3300';
-          document.body.style.margin = '0';
-          document.body.style.fontFamily = 'monospace, monospace';
-          document.body.style.display = 'flex';
-          document.body.style.justifyContent = 'center';
-          document.body.style.alignItems = 'center';
-          document.body.style.height = '100vh';
-        }
-      } catch (e) {
-        console.error("Could not verify IP:", e);
-        // Optionally block access if IP check fails:
-        // document.body.innerHTML = '<div id="access-denied"><div>403 Forbidden</div></div>';
-      }
-    }
-    checkIP();
-  </script>
 </body>
 </html>
