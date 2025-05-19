@@ -161,8 +161,9 @@
 
   <main>
     <section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
-      <!-- Added container div for JS to update -->
-      <div id="discord-embed"></div>
+      <div id="discord-embed" style="background:#2b2d31;border-radius:12px;padding:1em 1.4em;display:flex;align-items:center;gap:1em;color:#fff;min-width:320px;box-shadow:0 4px 12px #00000055;">
+        Loading Discord status...
+      </div>
     </section>
 
     <section id="projects">
@@ -219,31 +220,38 @@
 
       if (!json.success) throw new Error("Lanyard failed");
 
-      const { discord_user, discord_status, activities } = json.data;
+      const { discord_user, discord_status, activities, clan, primary_guild } = json.data;
 
       // Avatar URL
       const avatarUrl = `https://cdn.discordapp.com/avatars/${discord_user.id}/${discord_user.avatar}.png?size=128`;
 
-      // Custom status activity (type 4)
+      // Clan tag fallback (try clan, then primary_guild)
+      const clanTag = clan?.tag || primary_guild?.tag || null;
+
+      // Custom status
       const custom = activities.find(act => act.type === 4);
 
-      // Spotify or Game activity (type 0 = game, type 2 = listening)
+      // Spotify or Game activity
       const richActivity = activities.find(act => act.type === 0 || act.type === 2);
 
-      // Build the embed HTML
+      // Build the Discord embed HTML
       container.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
+        <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #333;border-radius:8px;padding:10px;max-width:320px;background:#222;color:#fff;">
           <img src="${avatarUrl}" style="width:60px;height:60px;border-radius:50%;">
           <div>
-            <strong style="font-size:1.1em;">${discord_user.username}</strong>
+            <strong style="font-size:1.1em;">
+              ${discord_user.username}
+              ${clanTag ? `<span style="color:#ff6600; font-weight: 700; margin-left: 6px;">[${clanTag}]</span>` : ''}
+              #${discord_user.discriminator}
+            </strong>
             <div style="margin:4px 0;">${statusMap[discord_status] || "Unknown"}</div>
-            <div id="custom-status" style="color:#555;font-size:0.9em;"></div>
-            <div id="activity" style="color:#333;font-size:0.9em;margin-top:4px;"></div>
+            <div id="custom-status" style="color:#aaa;font-size:0.9em;"></div>
+            <div id="activity" style="color:#bbb;font-size:0.9em;margin-top:4px;"></div>
           </div>
         </div>
       `;
 
-      // Set custom status text and emoji
+      // Set custom status
       const statusEl = document.getElementById("custom-status");
       if (custom && custom.state) {
         let emojiHTML = "";
@@ -257,13 +265,17 @@
           }
         }
         statusEl.innerHTML = emojiHTML + custom.state;
+      } else {
+        statusEl.textContent = "";
       }
 
-      // Set rich activity text
+      // Set activity (e.g., playing or listening)
       const activityEl = document.getElementById("activity");
       if (richActivity) {
         const verb = richActivity.type === 2 ? "Playing" : "Doing";
         activityEl.textContent = `${verb}: ${richActivity.name}`;
+      } else {
+        activityEl.textContent = "";
       }
 
     } catch (err) {
