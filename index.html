@@ -244,7 +244,19 @@
       const custom = activities.find(a => a.type === 4);
       const statusLine = document.getElementById("discord-status-line");
       if (custom && custom.state) {
-        statusLine.textContent = custom.emoji?.name ? `${custom.emoji.name} ${custom.state}` : custom.state;
+        if (custom.emoji) {
+          let emojiHTML = "";
+          if (custom.emoji.id) {
+            // Custom server emoji
+            const ext = custom.emoji.animated ? "gif" : "png";
+            const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
+            emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;">`;
+      } else {
+      // Unicode emoji
+      emojiHTML = `${custom.emoji.name} `;
+    }
+    statusLine.innerHTML = emojiHTML + custom
+
       } else {
         const fallbackStatus = {
           online: "Online",
