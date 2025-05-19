@@ -160,19 +160,10 @@
   </header>
 
   <main>
-<section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
-  <div style="background:#2b2d31;border-radius:12px;padding:1em 1.4em;display:flex;align-items:center;gap:1em;color:#fff;min-width:320px;box-shadow:0 4px 12px #00000055;">
-    <div style="position:relative;">
-      <img id="discord-avatar" src="" alt="Avatar" style="width:64px;height:64px;border-radius:50%;" />
-      <span id="status-dot" style="position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;border:3px solid #2b2d31;"></span>
-    </div>
-    <div style="display:flex;flex-direction:column;">
-      <div id="discord-username" style="font-size:1.2em;font-weight:600;">Loading...</div>
-      <div id="discord-status-line" style="font-size:0.9em;color:#b0b3b8;margin-top:2px;"></div>
-      <div id="discord-activity" style="font-size:0.85em;color:#aaaaaa;margin-top:5px;"></div>
-    </div>
-  </div>
-</section>
+    <section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
+      <!-- Added container div for JS to update -->
+      <div id="discord-embed"></div>
+    </section>
 
     <section id="projects">
       <h2>projects</h2>
@@ -230,16 +221,16 @@
 
       const { discord_user, discord_status, activities } = json.data;
 
-      // Avatar
+      // Avatar URL
       const avatarUrl = `https://cdn.discordapp.com/avatars/${discord_user.id}/${discord_user.avatar}.png?size=128`;
 
-      // Custom status
+      // Custom status activity (type 4)
       const custom = activities.find(act => act.type === 4);
 
-      // Spotify or Game activity
+      // Spotify or Game activity (type 0 = game, type 2 = listening)
       const richActivity = activities.find(act => act.type === 0 || act.type === 2);
 
-      // Construct HTML
+      // Build the embed HTML
       container.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
           <img src="${avatarUrl}" style="width:60px;height:60px;border-radius:50%;">
@@ -252,7 +243,7 @@
         </div>
       `;
 
-      // Set custom status
+      // Set custom status text and emoji
       const statusEl = document.getElementById("custom-status");
       if (custom && custom.state) {
         let emojiHTML = "";
@@ -268,7 +259,7 @@
         statusEl.innerHTML = emojiHTML + custom.state;
       }
 
-      // Set activity (e.g., playing or listening)
+      // Set rich activity text
       const activityEl = document.getElementById("activity");
       if (richActivity) {
         const verb = richActivity.type === 2 ? "Playing" : "Doing";
@@ -277,7 +268,7 @@
 
     } catch (err) {
       console.error("Failed to load status:", err);
-      document.getElementById("discord-embed").textContent = "⚠️ Failed to load Discord status.";
+      container.textContent = "⚠️ Failed to load Discord status.";
     }
   }
 
