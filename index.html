@@ -160,14 +160,16 @@
   </header>
 
   <main>
-<section id="discord-status" style="background:#1f1f1f;border-radius:6px;padding:1.5em;margin:2em 0;color:#fff;">
-  <h2 style="color:#ff6600;">My Discord Status</h2>
-  <div id="discord-info" style="display:flex;align-items:center;gap:1em;">
-    <img id="discord-avatar" src="" alt="Avatar" style="border-radius:50%;width:80px;height:80px;border:3px solid #ff6600;" />
-    <div>
-      <div style="font-size:1.3em;font-weight:bold;" id="discord-username">Loading...</div>
-      <div id="discord-status-line" style="margin-top:0.3em;color:#ccc;"></div>
-      <div id="discord-activity" style="margin-top:0.5em;color:#ff9933;"></div>
+<section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
+  <div style="background:#2b2d31;border-radius:12px;padding:1em 1.4em;display:flex;align-items:center;gap:1em;color:#fff;min-width:320px;box-shadow:0 4px 12px #00000055;">
+    <div style="position:relative;">
+      <img id="discord-avatar" src="" alt="Avatar" style="width:64px;height:64px;border-radius:50%;" />
+      <span id="status-dot" style="position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;border:3px solid #2b2d31;"></span>
+    </div>
+    <div style="display:flex;flex-direction:column;">
+      <div id="discord-username" style="font-size:1.2em;font-weight:600;">Loading...</div>
+      <div id="discord-status-line" style="font-size:0.9em;color:#b0b3b8;margin-top:2px;"></div>
+      <div id="discord-activity" style="font-size:0.85em;color:#aaaaaa;margin-top:5px;"></div>
     </div>
   </div>
 </section>
@@ -208,7 +210,7 @@
   </footer>
 
 <script>
-  const userId = "1124022735350268064"; // Replace with your actual Discord ID
+  const userId = "YOUR_DISCORD_ID"; // Replace with your actual Discord ID
 
   async function fetchDiscordStatus() {
     try {
@@ -225,45 +227,49 @@
       const activities = data.data.activities;
       const spotify = data.data.spotify;
 
-      const username = user.username;
-      const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-
-      const statusEmoji = {
-        online: "🟢 Online",
-        idle: "🌙 Idle",
-        dnd: "🔴 Do Not Disturb",
-        offline: "⚫ Offline"
-      };
-
+      const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
       document.getElementById("discord-avatar").src = avatarUrl;
-      document.getElementById("discord-username").textContent = username;
-      document.getElementById("discord-status-line").textContent = `Status: ${statusEmoji[status] || "Unknown"}`;
+      document.getElementById("discord-username").textContent = user.username;
+
+      // Set status dot color
+      const statusColors = {
+        online: "#23a55a",
+        idle: "#f0b232",
+        dnd: "#f23f43",
+        offline: "#747f8d"
+      };
+      document.getElementById("status-dot").style.backgroundColor = statusColors[status] || "#747f8d";
 
       // Custom status
       const custom = activities.find(a => a.type === 4);
+      const statusLine = document.getElementById("discord-status-line");
       if (custom && custom.state) {
-        document.getElementById("discord-status-line").textContent += ` — "${custom.state}"`;
+        statusLine.textContent = custom.emoji?.name ? `${custom.emoji.name} ${custom.state}` : custom.state;
+      } else {
+        const fallbackStatus = {
+          online: "Online",
+          idle: "Idle",
+          dnd: "Do Not Disturb",
+          offline: "Offline"
+        };
+        statusLine.textContent = fallbackStatus[status] || "Unknown";
       }
 
-      // Spotify or game activity
+      // Spotify or game
       const activityDiv = document.getElementById("discord-activity");
       if (spotify) {
-        activityDiv.textContent = `🎵 Listening to ${spotify.song} by ${spotify.artist}`;
+        activityDiv.textContent = `🎵 ${spotify.song} — ${spotify.artist}`;
       } else {
         const game = activities.find(a => a.type === 0);
-        if (game) {
-          activityDiv.textContent = `🎮 Playing ${game.name}`;
-        } else {
-          activityDiv.textContent = "";
-        }
+        activityDiv.textContent = game ? `🎮 ${game.name}` : "";
       }
     } catch (err) {
-      document.getElementById("discord-username").textContent = "Error loading Discord status.";
+      document.getElementById("discord-username").textContent = "Error loading status.";
     }
   }
 
   fetchDiscordStatus();
-  setInterval(fetchDiscordStatus, 30000); // refresh every 30 seconds
+  setInterval(fetchDiscordStatus, 30000);
 </script>
 </body>
 </html>
