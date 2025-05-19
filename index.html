@@ -104,47 +104,33 @@
       border-top: 2px solid #ff6600;
     }
 
-    .discord-embed {
-      display: flex;
-      align-items: center;
-      gap: 1em;
-      background: #111;
-      padding: 1em;
-      border: 1px solid #333;
-      border-radius: 8px;
-      box-shadow: 0 0 15px #222;
+    .avatar-wrapper {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      flex-shrink: 0;
     }
 
-    .discord-embed img {
+    .discord-avatar {
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
-      width: 64px;
-      height: 64px;
-    }
-
-    .discord-info h3 {
-      margin: 0;
-      font-size: 1.2em;
-      color: #ffa64d;
-    }
-
-    .discord-status {
-      font-size: 0.9em;
-      margin-top: 0.3em;
-      color: #aaa;
     }
 
     .status-dot {
-      width: 10px;
-      height: 10px;
-      display: inline-block;
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      margin-right: 6px;
+      border: 3px solid #fff;
     }
 
-    .online { background: #43b581; }
-    .idle { background: #faa61a; }
-    .dnd { background: #f04747; }
-    .offline { background: #747f8d; }
+    .status-dot.online { background: #43b581; }
+    .status-dot.idle { background: #faa61a; }
+    .status-dot.dnd { background: #f04747; }
+    .status-dot.offline { background: #747f8d; }
   </style>
 </head>
 <body>
@@ -161,7 +147,6 @@
 
   <main>
     <section id="discord-status" style="display: flex; justify-content: center; margin: 2em 0;">
-      <!-- Added container div for JS to update -->
       <div id="discord-embed"></div>
     </section>
 
@@ -201,7 +186,7 @@
   </footer>
 
 <script>
-  const userId = "1124022735350268064"; // 👈 Replace with your actual Discord ID
+  const userId = "1124022735350268064";
 
   const statusMap = {
     online: "🟢 Online",
@@ -221,19 +206,17 @@
 
       const { discord_user, discord_status, activities } = json.data;
 
-      // Avatar URL
       const avatarUrl = `https://cdn.discordapp.com/avatars/${discord_user.id}/${discord_user.avatar}.png?size=128`;
 
-      // Custom status activity (type 4)
       const custom = activities.find(act => act.type === 4);
-
-      // Spotify or Game activity (type 0 = game, type 2 = listening)
       const richActivity = activities.find(act => act.type === 0 || act.type === 2);
 
-      // Build the embed HTML
       container.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:320px;background:#fff;color:#000;">
-          <img src="${avatarUrl}" style="width:60px;height:60px;border-radius:50%;">
+          <div class="avatar-wrapper">
+            <img src="${avatarUrl}" class="discord-avatar">
+            <span class="status-dot ${discord_status}"></span>
+          </div>
           <div>
             <strong style="font-size:1.1em;">${discord_user.username}</strong>
             <div style="margin:4px 0;">${statusMap[discord_status] || "Unknown"}</div>
@@ -243,7 +226,6 @@
         </div>
       `;
 
-      // Set custom status text and emoji
       const statusEl = document.getElementById("custom-status");
       if (custom && custom.state) {
         let emojiHTML = "";
@@ -253,27 +235,4 @@
             const emojiURL = `https://cdn.discordapp.com/emojis/${custom.emoji.id}.${ext}`;
             emojiHTML = `<img src="${emojiURL}" alt="${custom.emoji.name}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`;
           } else {
-            emojiHTML = `${custom.emoji.name} `;
-          }
-        }
-        statusEl.innerHTML = emojiHTML + custom.state;
-      }
-
-      // Set rich activity text
-      const activityEl = document.getElementById("activity");
-      if (richActivity) {
-        const verb = richActivity.type === 2 ? "Playing" : "Doing";
-        activityEl.textContent = `${verb}: ${richActivity.name}`;
-      }
-
-    } catch (err) {
-      console.error("Failed to load status:", err);
-      container.textContent = "⚠️ Failed to load Discord status.";
-    }
-  }
-
-  updateDiscordStatus();
-  setInterval(updateDiscordStatus, 15000); // Refresh every 15 seconds
-</script>
-</body>
-</html>
+            emojiHTML =
