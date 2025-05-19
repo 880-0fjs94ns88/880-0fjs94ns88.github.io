@@ -2,103 +2,190 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Errorrail - Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Errorrail's Portfolio</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: "Courier New", monospace;
+      background: #121212;
+      color: #f5f5f5;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
-      color: #333;
+      background-image: linear-gradient(135deg, #2e2e2e 25%, #1a1a1a 100%);
     }
 
     header {
-      background: #333;
-      color: white;
-      padding: 2em;
+      background-color: #000;
+      border-bottom: 2px solid #ff6600;
       text-align: center;
+      padding: 1.5em;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.8em;
+      color: #ff6600;
+      text-shadow: 0 0 8px #ff6600aa;
+    }
+
+    header p {
+      font-size: 1.2em;
+      color: #ffcc99;
+      margin-top: 0.3em;
+    }
+
+    nav {
+      margin-top: 1em;
     }
 
     nav a {
-      color: #fff;
-      margin: 0 10px;
+      margin: 0 12px;
+      color: #ff9933;
       text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
     }
 
     main {
-      padding: 2em;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 0 1em;
+    }
+
+    section {
+      margin-bottom: 2.5em;
+      background: #1f1f1f;
+      border-radius: 6px;
+      border: 1px solid #444;
+      padding: 1.5em 2em;
+      box-shadow: 0 0 15px #ff660033 inset;
     }
 
     h2 {
-      border-bottom: 2px solid #ccc;
-      padding-bottom: 0.5em;
+      color: #ff6600;
+      font-size: 2em;
+      border-bottom: 2px solid #ff6600;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
     }
 
     .project {
-      background: white;
+      margin-top: 1em;
+    }
+
+    .project h3 {
+      margin-bottom: 0.2em;
+      color: #ffa64d;
+    }
+
+    .project p {
+      margin: 0.2em 0 0.6em;
+      color: #ddd;
+    }
+
+    .project a {
+      color: #ff9933;
+      font-weight: bold;
+    }
+
+    .project a:hover {
+      text-decoration: underline;
+    }
+
+    .add-box {
+      background: #292929;
+      border: 2px dashed #ff6600;
       padding: 1em;
-      margin: 1em 0;
       border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-family: monospace;
+      color: #ffa64d;
+      user-select: all;
+      white-space: pre-wrap;
+      cursor: text;
     }
 
     footer {
-      background: #222;
-      color: #ccc;
+      background: #000;
+      color: #ff6600;
       text-align: center;
-      padding: 1em;
+      padding: 1.2em;
+      font-size: 0.9em;
+      border-top: 2px solid #ff6600;
+      margin-top: 3em;
     }
 
     a {
-      color: #0066cc;
+      color: #ff9933;
     }
 
     a:hover {
       text-decoration: underline;
+    }
+
+    /* Blink animation for welcome */
+    .blink {
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink {
+      0%, 100% {opacity: 1;}
+      50% {opacity: 0;}
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Errorrail</h1>
-    <p>Web Developer • Designer • Creator</p>
+    <p class="blink">Welcome to my terminal-style portfolio!</p>
     <nav>
       <a href="#projects">Projects</a>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
+      <a href="#addme">Add Me!</a>
     </nav>
   </header>
 
   <main>
     <section id="projects">
-      <h2>Projects</h2>
+      <h2>★ Projects ★</h2>
       <div class="project">
         <h3>Digitronium Bot</h3>
-        <p>A powerful moderation and mirroring bot for Discord, developed by Digitronium Softworks.</p>
-        <a href="https://digitroniumsoftworks.github.io/">Visit Site</a>
+        <p>A powerful Discord bot for moderation and mirroring, built by Digitronium Softworks.</p>
+        <a href="https://digitroniumsoftworks.github.io/" target="_blank" rel="noopener">Visit Digitronium</a>
       </div>
       <div class="project">
-        <h3>Project 2</h3>
-        <p>Description of another project. Replace this with your own project details.</p>
-        <a href="#">View Project</a>
+        <h3>Old-School Web Tools</h3>
+        <p>Web utilities with a retro twist — clocks, counters, and more!</p>
+        <a href="#">Coming Soon</a>
       </div>
     </section>
 
     <section id="about">
-      <h2>About Me</h2>
-      <p>Hi! I'm Errorrail — I build tools, bots, and sites with personality and power. I'm passionate about creative software that helps people and communities thrive.</p>
+      <h2>★ About Me ★</h2>
+      <p>I'm Errorrail, a digital tinkerer building things on the web just for the fun of it. Bots, pages, experiments — I do it all. Heavily inspired by old net aesthetics, terminal vibes, and Web 1.0 flair.</p>
     </section>
 
     <section id="contact">
-      <h2>Contact</h2>
+      <h2>★ Contact ★</h2>
       <p>Email: <a href="mailto:1errorrail@gmail.com">1errorrail@gmail.com</a></p>
-      <p>GitHub: <a href="https://github.com/Errorrail">Errorrail</a></p>
+      <p>GitHub: <a href="https://github.com/Errorrail" target="_blank" rel="noopener">github.com/Errorrail</a></p>
+    </section>
+
+    <section id="addme">
+      <h2>★ Add Me to Your Website! ★</h2>
+      <p>Copy and paste this snippet to add a link to my portfolio on your site:</p>
+      <pre class="add-box" contenteditable="true" spellcheck="false">
+&lt;a href="https://errorrail.neocities.org" target="_blank" rel="noopener"&gt;Visit Errorrail's Portfolio&lt;/a&gt;
+      </pre>
+      <p style="color:#ccc; font-size:0.9em; margin-top:0.5em;">Click inside the box, press Ctrl+C (Cmd+C on Mac) to copy.</p>
     </section>
   </main>
 
   <footer>
-    <p>© 2025 Errorrail</p>
+    <p>Made with 💾 on Neocities — © 2025 Errorrail</p>
   </footer>
 </body>
 </html>
