@@ -9,8 +9,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* Keep cursor none for default browser cursor throughout */
-            cursor: none !important; 
+            cursor: none !important;
         }
 
         body {
@@ -38,7 +37,7 @@
             align-items: center;
             padding: 0 12px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1002; /* Ensure taskbar stays on top */
+            z-index: 1002;
         }
 
         .start-button {
@@ -99,7 +98,6 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            cursor: pointer;
             padding: 8px;
             border-radius: 4px;
             transition: all 0.3s ease;
@@ -159,14 +157,6 @@
             font-size: 20px;
         }
 
-        .recycle-icon {
-            background: linear-gradient(135deg, #4CAF50, #66BB6A);
-        }
-
-        .folder-icon {
-            background: linear-gradient(135deg, #FFC107, #FFD54F);
-        }
-
         .icon-label {
             color: white;
             font-size: 12px;
@@ -217,7 +207,6 @@
             width: 16px;
             height: 16px;
             opacity: 0.8;
-            cursor: pointer;
         }
 
         .loading-screen {
@@ -231,7 +220,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 10001;
             animation: fadeOutLoading 2s ease 1s forwards;
         }
 
@@ -242,261 +231,144 @@
             }
         }
 
-        /* Updated Windows Logo Styling */
         .windows-logo {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 30px;
-            display: flex;
-            flex-wrap: wrap; /* Allows panes to wrap into a 2x2 grid */
-            animation: none; /* Remove old spin animation */
+            width: 80px; height: 80px; margin-bottom: 30px; display: flex;
+            flex-wrap: wrap; animation: none;
         }
-
         .windows-logo .pane {
-            width: 50%; /* Each pane takes half the width */
-            height: 50%; /* Each pane takes half the height */
-            background: #0078D4; /* Standard Windows blue */
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-            position: relative;
-            box-sizing: border-box; /* Include padding/border in dimensions */
-            animation: winLogoPulse 2s infinite ease-in-out;
+            width: 50%; height: 50%; background: #0078D4;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); position: relative;
+            box-sizing: border-box; animation: winLogoPulse 2s infinite ease-in-out;
         }
-
-        /* Add individual delays for a staggered pulse effect */
-        .windows-logo .p1 { animation-delay: 0s; }
-        .windows-logo .p2 { animation-delay: 0.1s; }
-        .windows-logo .p3 { animation-delay: 0.2s; }
-        .windows-logo .p4 { animation-delay: 0.3s; }
-
+        .windows-logo .p1 { animation-delay: 0s; } .windows-logo .p2 { animation-delay: 0.1s; }
+        .windows-logo .p3 { animation-delay: 0.2s; } .windows-logo .p4 { animation-delay: 0.3s; }
         @keyframes winLogoPulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            }
-            50% {
-                transform: scale(1.05); /* Slight scale up */
-                box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); /* More pronounced shadow */
-            }
+            0%, 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+            50% { transform: scale(1.05); box-shadow: 0 0 15px rgba(0,0,0,0.4); }
         }
-
-        .loading-text {
-            color: white;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        .loading-dots {
-            display: flex;
-            gap: 4px;
-        }
-
+        .loading-text { color: white; font-size: 24px; margin-bottom: 20px; }
+        .loading-dots { display: flex; gap: 4px; }
         .loading-dot {
-            width: 8px;
-            height: 8px;
-            background: white;
-            border-radius: 50%;
+            width: 8px; height: 8px; background: white; border-radius: 50%;
             animation: dotPulse 1.4s ease-in-out infinite both;
         }
-
         .loading-dot:nth-child(1) { animation-delay: -0.32s; }
         .loading-dot:nth-child(2) { animation-delay: -0.16s; }
-
         @keyframes dotPulse {
             0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
             40% { transform: scale(1); opacity: 1; }
         }
 
         .window {
-            position: fixed;
-            background: #f0f0f0;
-            border: 1px solid #d4d4d4;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            z-index: 1001;
-            opacity: 0;
-            transform: scale(0.8) translateY(20px);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border-radius: 8px;
-            overflow: hidden;
-            transform-origin: center center;
+            position: fixed; background: #f0f0f0; border: 1px solid #d4d4d4;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); z-index: 1001;
+            opacity: 0; transform: scale(0.8) translateY(20px);
+            transition: opacity 0.3s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
+                        top 0.3s cubic-bezier(0.25,0.46,0.45,0.94), left 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
+                        width 0.3s cubic-bezier(0.25,0.46,0.45,0.94), height 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
+                        border-radius 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+            border-radius: 8px; overflow: hidden; transform-origin: center center;
         }
+        .window.show { opacity: 1; transform: scale(1) translateY(0); }
 
-        .window.show {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-
-        /* The maximizing animation class */
+        /* Maximizing animation and state */
         .window.is-maximizing {
-            transition: top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        border-radius 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border-radius: 0; /* Ensures the final state has no border-radius */
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: calc(100vh - 48px) !important;
+            border-radius: 0; /* Final state has no border-radius */
         }
-        
-        /* Class to mark the window as maximized (for logical state) */
         .window.maximized {
             border-radius: 0 !important;
             top: 0 !important;
             left: 0 !important;
             width: 100vw !important;
-            height: calc(100vh - 48px) !important;
+            height: calc(100vh - 48px) !important; /* Account for taskbar */
         }
-
 
         .window-header {
-            height: 30px;
-            background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-            border-bottom: 1px solid #d4d4d4;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 8px;
-            -webkit-app-region: drag; /* Make header draggable */
+            height: 30px; background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+            border-bottom: 1px solid #d4d4d4; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 8px; -webkit-app-region: drag;
         }
-
         .window-title {
-            font-size: 11px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: normal;
+            font-size: 11px; color: #333; display: flex; align-items: center;
+            gap: 6px; font-weight: normal;
         }
-
         .window-title-icon {
-            width: 16px;
-            height: 16px;
+            width: 16px; height: 16px;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23ffffff"/><path d="M2 2h12v12H2z" fill="none" stroke="%23000" stroke-width="0.5"/><text x="8" y="10" text-anchor="middle" font-family="Consolas,monospace" font-size="6" fill="%23333">txt</text></svg>') no-repeat center;
         }
-
-        .window-controls {
-            display: flex;
-        }
-
+        .window-controls { display: flex; }
         .window-control {
-            width: 45px; /* Wider for easier targeting */
-            height: 30px; /* Taller for easier targeting */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 9px;
-            color: #333;
-            background: #f0f0f0;
-            cursor: pointer;
-            font-family: 'Marlett', sans-serif;
+            width: 45px; height: 30px; display: flex; align-items: center;
+            justify-content: center; font-size: 9px; color: #333;
+            background: #f0f0f0; font-family: 'Marlett', sans-serif;
             transition: background 0.1s ease;
         }
-
-        .window-control:hover {
-            background: #e5f1fb;
-        }
-
-        .window-control:active {
-            background: #cce4f7;
-        }
-        .window-control.close:hover {
-            background-color: #e81123;
-            color: white;
-        }
-
-        .window-control.close:active {
-            background-color: #f1707a;
-            color: white;
-        }
-
+        .window-control:hover { background: #e5f1fb; }
+        .window-control:active { background: #cce4f7; }
+        .window-control.close:hover { background-color: #e81123; color: white; }
+        .window-control.close:active { background-color: #f1707a; color: white; }
         .window-control.minimize::before { content: '0'; }
         .window-control.maximize::before { content: '1'; }
         .window-control.close::before { content: 'r'; }
 
-        .window-content {
-            height: calc(100% - 30px); /* Adjust for header height */
-            background: white;
-            position: relative;
-        }
-
+        .window-content { height: calc(100% - 30px); background: white; position: relative; }
         .window-menu {
-            height: 22px;
-            background: #f0f0f0;
-            border-bottom: 1px solid #d4d4d4;
-            display: flex;
-            align-items: center;
-            padding: 0 8px;
-            font-size: 11px;
+            height: 22px; background: #f0f0f0; border-bottom: 1px solid #d4d4d4;
+            display: flex; align-items: center; padding: 0 8px; font-size: 11px;
         }
-
-        .menu-item {
-            padding: 2px 8px;
-            color: #333;
-            cursor: pointer;
-        }
-
-        .menu-item:hover {
-            background: #e5f1fb;
-        }
-
-        .window iframe {
-            width: 100%;
-            height: calc(100% - 22px); /* Adjust for menu height */
-            border: none;
-            background: white;
-        }
+        .menu-item { padding: 2px 8px; color: #333; }
+        .menu-item:hover { background: #e5f1fb; }
+        .window iframe { width: 100%; height: calc(100% - 22px); border: none; background: white; }
 
         .window-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 1000; opacity: 0; visibility: hidden;
             transition: all 0.3s ease;
         }
-
-        .window-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
+        .window-overlay.show { opacity: 1; visibility: visible; }
 
         .fade-to-white {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: white;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: white; z-index: 10000;
+            opacity: 0; visibility: hidden;
             transition: opacity 0.5s ease;
         }
+        .fade-to-white.show { opacity: 1; visibility: visible; }
 
-        .fade-to-white.show {
+        /* Popup for user action after maximize */
+        .user-action-prompt-popup {
+            position: fixed;
+            bottom: 60px; /* Above taskbar */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            z-index: 1003;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .user-action-prompt-popup.show {
             opacity: 1;
             visibility: visible;
         }
+
     </style>
 </head>
 <body>
     <div class="loading-screen">
-        <!-- Updated Windows Logo HTML Structure -->
         <div class="windows-logo">
-            <span class="pane p1"></span>
-            <span class="pane p2"></span>
-            <span class="pane p3"></span>
-            <span class="pane p4"></span>
+            <span class="pane p1"></span><span class="pane p2"></span>
+            <span class="pane p3"></span><span class="pane p4"></span>
         </div>
         <div class="loading-text">Windows</div>
         <div class="loading-dots">
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
+            <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
         </div>
     </div>
 
@@ -507,78 +379,77 @@
                 <div class="icon-label">mainpage</div>
             </div>
         </div>
-
         <div class="taskbar">
-            <div class="start-button">
-                <div class="start-icon"></div>
-            </div>
+            <div class="start-button"><div class="start-icon"></div></div>
             <div class="taskbar-apps">
-                <div class="taskbar-app">📁</div>
-                <div class="taskbar-app">🌐</div>
-                <div class="taskbar-app">⚙️</div>
+                <div class="taskbar-app" title="App 1"></div>
+                <div class="taskbar-app" title="App 2"></div>
+                <div class="taskbar-app" title="App 3"></div>
             </div>
             <div class="notification-area">
-                <div class="system-icon">🔊</div>
-                <div class="system-icon">📶</div>
-                <div class="system-icon">🔋</div>
+                <div class="system-icon" title="Network"></div>
+                <div class="system-icon" title="Volume"></div>
+                <div class="system-icon" title="Power"></div>
             </div>
             <div class="time-display">
-                <div id="time">12:34 PM</div>
-                <div id="date">6/5/2025</div>
+                <div id="time">12:34 PM</div><div id="date">6/5/2025</div>
             </div>
         </div>
     </div>
 
-    <div class="custom-cursor">
-        <div class="cursor-arrow"></div>
-    </div>
+    <div class="custom-cursor"><div class="cursor-arrow"></div></div>
 
     <div class="window-overlay" id="window-overlay">
         <div class="window" id="mainpage-window" style="width: 85%; height: 75%; top: 12%; left: 7.5%;">
             <div class="window-header">
                 <div class="window-title">
-                    <div class="window-title-icon"></div>
-                    haiii x3
+                    <div class="window-title-icon"></div>haiii x3
                 </div>
                 <div class="window-controls">
                     <div class="window-control minimize"></div>
                     <div class="window-control maximize" id="maximize-button"></div>
-                    <div class="window-control close" onclick="closeWindow()"></div>
+                    <div class="window-control close" id="close-button"></div>
                 </div>
             </div>
             <div class="window-menu">
-                <div class="menu-item">File</div>
-                <div class="menu-item">Edit</div>
-                <div class="menu-item">Format</div>
-                <div class="menu-item">View</div>
-                <div class="menu-item">Help</div>
+                <div class="menu-item">File</div><div class="menu-item">Edit</div><div class="menu-item">Format</div><div class="menu-item">View</div><div class="menu-item">Help</div>
             </div>
             <div class="window-content">
-                <!-- Reverted iframe source to load from demo/mainpage.html -->
-                <iframe id="mainpage-iframe" src="mainpage.html"></iframe>
+                <iframe id="mainpage-iframe" src="mainpage.html" title="Main Page Content"></iframe>
             </div>
         </div>
+    </div>
+
+    <div class="user-action-prompt-popup" id="user-action-prompt">
+        Click the maximize button to go fullscreen
     </div>
 
     <div class="fade-to-white" id="fade-overlay"></div>
 
     <script>
-        // Update time display
+        // DOM Elements
+        const mainPageWindow = document.getElementById('mainpage-window');
+        const windowOverlay = document.getElementById('window-overlay');
+        const mainpageIcon = document.getElementById('mainpage-icon');
+        const maximizeButton = document.getElementById('maximize-button');
+        const userActionPrompt = document.getElementById('user-action-prompt');
+        const fadeOverlay = document.getElementById('fade-overlay');
+        const iframe = document.getElementById('mainpage-iframe');
+        const cursor = document.querySelector('.custom-cursor');
+        const closeButton = document.getElementById('close-button');
+
+        let cursorX = 0, cursorY = 0;
+        let isCustomCursorInteractive = false;
+        let originalWindowState = {}; // To store pre-maximize state
+
+        // --- Utility Functions ---
         function updateTime() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const dateStr = now.toLocaleDateString();
-            document.getElementById('time').textContent = timeStr;
-            document.getElementById('date').textContent = dateStr;
+            document.getElementById('time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('date').textContent = now.toLocaleDateString();
         }
-        
         setInterval(updateTime, 1000);
         updateTime();
-
-        // Custom cursor - INDEPENDENT of real mouse movement initially
-        const cursor = document.querySelector('.custom-cursor');
-        let cursorX = 0, cursorY = 0;
-        let isCustomCursorInteractive = false; // New flag to control interactivity
 
         function animateCursor() {
             cursor.style.left = cursorX + 'px';
@@ -587,8 +458,6 @@
         }
         animateCursor();
 
-        // Listen for real mouse movements ONLY when isCustomCursorInteractive is true
-        // This listener is for the main document body and captures events outside the iframe.
         document.addEventListener('mousemove', (e) => {
             if (isCustomCursorInteractive) {
                 cursorX = e.clientX;
@@ -596,292 +465,207 @@
             }
         });
 
+        function setupIframeInteraction() {
+            if (iframe.contentWindow && iframe.contentWindow.document) {
+                try {
+                    iframe.contentWindow.document.body.style.cursor = 'none';
+                    iframe.contentWindow.document.addEventListener('mousemove', (e) => {
+                        if (isCustomCursorInteractive) {
+                            const iframeRect = iframe.getBoundingClientRect();
+                            cursorX = iframeRect.left + e.clientX;
+                            cursorY = iframeRect.top + e.clientY;
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Could not setup iframe interaction due to cross-origin policy:', e);
+                }
+            }
+        }
 
-        // Automated mouse movement and click animation
+        // --- Automated Mouse Animation Sequence ---
         function startMouseAnimation() {
-            const mainpageIcon = document.getElementById('mainpage-icon');
             const iconRect = mainpageIcon.getBoundingClientRect();
             const targetX = iconRect.left + iconRect.width / 2;
             const targetY = iconRect.top + iconRect.height / 2;
+            let startX = window.innerWidth - 50, startY = window.innerHeight - 100;
+            cursorX = startX; cursorY = startY;
+            const duration = 2000, startTime = Date.now();
 
-            // Start from bottom right corner
-            let startX = window.innerWidth - 50;
-            let startY = window.innerHeight - 100;
-            
-            cursorX = startX;
-            cursorY = startY;
-
-            // Animate mouse movement to the icon
-            const duration = 2000; // 2 seconds
-            const startTime = Date.now();
-
-            function moveMouseToIcon() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                // Easing function for smooth movement
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
-                
-                cursorX = startX + (targetX - startX) * easeProgress;
-                cursorY = startY + (targetY - startY) * easeProgress;
-
-                if (progress < 1) {
-                    requestAnimationFrame(moveMouseToIcon);
-                } else {
-                    // Mouse reached the icon, now click it
-                    setTimeout(() => {
-                        clickIcon();
-                    }, 300);
-                }
+            function move() {
+                const p = Math.min((Date.now() - startTime) / duration, 1);
+                const eP = 1 - Math.pow(1 - p, 3);
+                cursorX = startX + (targetX - startX) * eP;
+                cursorY = startY + (targetY - startY) * eP;
+                if (p < 1) requestAnimationFrame(move);
+                else setTimeout(clickMainpageIcon, 300);
             }
-
-            setTimeout(moveMouseToIcon, 1000); // Start animation after 1 second
+            setTimeout(move, 1000); // Initial delay for loading screen
         }
 
-        function clickIcon() {
-            const mainpageIcon = document.getElementById('mainpage-icon');
-            
-            // Add click animation class
+        function clickMainpageIcon() {
             mainpageIcon.classList.add('clicked');
-            
-            // Simulate click effect on cursor
             cursor.style.transform = 'scale(0.8)';
-            
             setTimeout(() => {
                 cursor.style.transform = 'scale(1)';
                 mainpageIcon.classList.remove('clicked');
-                
-                // Show success message or open application effect
-                showOpenEffect();
+                openMainPageWindow();
             }, 300);
         }
 
-        function showOpenEffect() {
-            // Create a simple "opening" effect
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-            `;
-            overlay.textContent = '';
-            
-            const style = document.createElement('style');
-            style.textContent = `
-            `;
-            document.head.appendChild(style);
-            document.body.appendChild(overlay);
-            
-            setTimeout(() => {
-                overlay.remove();
-                style.remove();
-                // Show the actual window
-                openMainPageWindow();
-            }, 1500);
-        }
-
         function openMainPageWindow() {
-            const windowOverlay = document.getElementById('window-overlay');
-            const mainPageWindow = document.getElementById('mainpage-window');
-            const iframe = document.getElementById('mainpage-iframe');
-            
             windowOverlay.classList.add('show');
             setTimeout(() => {
                 mainPageWindow.classList.add('show');
-
-                // After a short delay to ensure iframe content is loaded,
-                // try to add mousemove listener to the iframe's document.
-                iframe.onload = () => { // Ensure iframe content is loaded
-                    if (iframe.contentWindow && iframe.contentWindow.document) {
-                        try {
-                            iframe.contentWindow.document.body.style.cursor = 'none'; // Hide cursor inside iframe
-                            iframe.contentWindow.document.addEventListener('mousemove', (e) => {
-                                if (isCustomCursorInteractive) {
-                                    // Adjust mouse coordinates relative to the parent window
-                                    const iframeRect = iframe.getBoundingClientRect();
-                                    cursorX = iframeRect.left + e.clientX;
-                                    cursorY = iframeRect.top + e.clientY;
-                                }
-                            });
-                            console.log('Iframe mousemove listener added successfully after load.');
-                        } catch (e) {
-                            console.warn('Could not add mousemove listener or hide cursor in iframe due to cross-origin policy:', e);
-                        }
-                    }
-                };
-                // If iframe is already loaded by the time we attach onload (e.g., cached), manually trigger
-                if (iframe.contentWindow && iframe.contentWindow.document && iframe.contentWindow.document.readyState === 'complete') {
-                    iframe.onload();
+                iframe.onload = setupIframeInteraction;
+                if (iframe.contentWindow && iframe.contentWindow.document.readyState === 'complete') {
+                    setupIframeInteraction();
                 }
-
-                // Move mouse to maximize button and click it
-                setTimeout(() => {
-                    const maximizeButton = document.getElementById('maximize-button');
-                    const buttonRect = maximizeButton.getBoundingClientRect();
-                    const targetX = buttonRect.left + buttonRect.width / 2;
-                    const targetY = buttonRect.top + buttonRect.height / 2;
-
-                    let startX = cursorX; // Start from current cursor position
-                    let startY = cursorY;
-
-                    const moveDuration = 700; // 0.7 seconds to move to button
-                    const moveStartTime = Date.now();
-
-                    function moveMouseToMaximizeButton() {
-                        const elapsed = Date.now() - moveStartTime;
-                        const progress = Math.min(elapsed / moveDuration, 1);
-                        const easeProgress = 1 - Math.pow(1 - progress, 3);
-
-                        cursorX = startX + (targetX - startX) * easeProgress;
-                        cursorY = startY + (targetY - startY) * easeProgress;
-
-                        if (progress < 1) {
-                            requestAnimationFrame(moveMouseToMaximizeButton);
-                        } else {
-                            // Mouse reached maximize button, now click it
-                            setTimeout(() => {
-                                clickMaximizeButton(maximizeButton);
-                            }, 200); // Short delay before click
-                        }
-                    }
-                    requestAnimationFrame(moveMouseToMaximizeButton);
-                }, 1000); // Wait 1 second after window appears before moving mouse to maximize button
+                setTimeout(moveMouseToMaximizeButton, 1000);
             }, 100);
         }
 
-        function clickMaximizeButton(buttonElement) {
-            buttonElement.classList.add('clicked'); // Add a visual click effect to the button
-            cursor.style.transform = 'scale(0.8)'; // Simulate cursor click effect
-            
-            maximizeWindow(); // Trigger the maximize action
+        function moveMouseToMaximizeButton() {
+            const btnRect = maximizeButton.getBoundingClientRect();
+            const targetX = btnRect.left + btnRect.width / 2;
+            const targetY = btnRect.top + btnRect.height / 2;
+            let startX = cursorX, startY = cursorY;
+            const duration = 700, startTime = Date.now();
 
-            setTimeout(() => {
-                buttonElement.classList.remove('clicked');
-                cursor.style.transform = 'scale(1)';
-            }, 300); // Match this duration with the CSS transition for the click effect
-        }
-
-
-        function maximizeWindow() {
-            const mainPageWindow = document.getElementById('mainpage-window');
-            
-            // If already maximized, or if we are already in the process, exit
-            if (mainPageWindow.classList.contains('maximized') || mainPageWindow.classList.contains('is-maximizing')) {
-                return;
+            function move() {
+                const p = Math.min((Date.now() - startTime) / duration, 1);
+                const eP = 1 - Math.pow(1 - p, 3);
+                cursorX = startX + (targetX - startX) * eP;
+                cursorY = startY + (targetY - startY) * eP;
+                if (p < 1) requestAnimationFrame(move);
+                else setTimeout(automatedMaximizeClick, 200);
             }
-
-            // Store original position and size
-            const rect = mainPageWindow.getBoundingClientRect();
-            mainPageWindow.style.setProperty('--original-top', rect.top + 'px');
-            mainPageWindow.style.setProperty('--original-left', rect.left + 'px');
-            mainPageWindow.style.setProperty('--original-width', rect.width + 'px');
-            mainPageWindow.style.setProperty('--original-height', rect.height + 'px');
-            
-            // Set the current position and size as explicit inline styles
-            // This is crucial for the CSS transition to work from the current state
-            mainPageWindow.style.top = rect.top + 'px';
-            mainPageWindow.style.left = rect.left + 'px';
-            mainPageWindow.style.width = rect.width + 'px';
-            mainPageWindow.style.height = rect.height + 'px';
-            mainPageWindow.style.borderRadius = rect.borderRadius; // Capture initial border radius
-
-            // Force a reflow/repaint to ensure the browser registers the new inline styles
-            // before the transition class is added.
-            void mainPageWindow.offsetWidth; 
-
-            // Add the 'is-maximizing' class to initiate the transition
-            mainPageWindow.classList.add('is-maximizing');
-
-            // After the transition completes, add the 'maximized' class for a persistent state
-            // and remove the 'is-maximizing' class if you want to reuse it for un-maximize
-            mainPageWindow.addEventListener('transitionend', function handler() {
-                mainPageWindow.classList.add('maximized');
-                mainPageWindow.classList.remove('is-maximizing'); // Clean up the transition class
-                mainPageWindow.removeEventListener('transitionend', handler);
-
-                // Optionally, remove inline style properties if the 'maximized' class covers them
-                // This keeps the inline styles clean once maximized.
-                mainPageWindow.style.top = '';
-                mainPageWindow.style.left = '';
-                mainPageWindow.style.width = '';
-                mainPageWindow.style.height = '';
-                mainPageWindow.style.borderRadius = '';
-
-                // After maximizing, make the custom cursor follow the real mouse
-                isCustomCursorInteractive = true;
-
-                // IMPORTANT: When loading from an external src, direct DOM access to iframe.contentWindow.document
-                // is subject to same-origin policy. This will only work if demo/mainpage.html is on the same origin.
-                // If it's not, you'll need cross-origin communication (e.g., postMessage API).
-                const iframe = document.getElementById('mainpage-iframe');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
-                    try {
-                        // This applies 'cursor: none' to the iframe's body from the parent.
-                        // It will only work if same-origin.
-                        iframe.contentWindow.document.body.style.cursor = 'none';
-
-                        // Attach mousemove listener directly to iframe's document
-                        iframe.contentWindow.document.addEventListener('mousemove', (e) => {
-                            if (isCustomCursorInteractive) {
-                                // e.clientX and e.clientY are relative to the iframe's viewport.
-                                // We need to add the iframe's offset to get coordinates relative to the parent.
-                                const iframeRect = iframe.getBoundingClientRect();
-                                cursorX = iframeRect.left + e.clientX;
-                                cursorY = iframeRect.top + e.clientY;
-                            }
-                        });
-                        console.log('Iframe mousemove listener added successfully after maximize.');
-                    } catch (e) {
-                        console.warn('Could not add mousemove listener or hide cursor in iframe due to cross-origin policy:', e);
-                        // Fallback: If cross-origin, custom cursor won't work inside iframe
-                    }
-                }
-
-            }, { once: true }); // Ensure handler runs only once
+            requestAnimationFrame(move);
         }
 
-        function closeWindow() {
-            mainPageWindow.style.borderRadius = '8px'; // Always reset to standard border-radius on close
+        // --- Window Maximize/Restore Logic (Original Animation) ---
+        function automatedMaximizeClick() {
+            // Simulate click visuals
+            maximizeButton.style.backgroundColor = '#cce4f7';
+            cursor.style.transform = 'scale(0.8)';
 
-            // Initiate the transition to the un-maximized/closed state
-            // The 'show' class is responsible for the opacity and scale transition
-            mainPageWindow.classList.remove('show');
-
-            // Clean up the stored properties after the close animation completes
             setTimeout(() => {
-                windowOverlay.classList.remove('show');
-                mainPageWindow.style.removeProperty('--original-top');
-                mainPageWindow.style.removeProperty('--original-left');
-                mainPageWindow.style.removeProperty('--original-width');
-                mainPageWindow.style.removeProperty('--original-height');
-                // Ensure no residual inline styles interfere with next open
-                mainPageWindow.style.top = '12%'; 
-                mainPageWindow.style.left = '7.5%';
-                mainPageWindow.style.width = '85%';
-                mainPageWindow.style.height = '75%';
-            }, 300); // Matches the window.show transition duration
+                maximizeButton.style.backgroundColor = '';
+                cursor.style.transform = 'scale(1)';
+                toggleMaximizeWindow(); // Call the function to handle maximize/restore
+            }, 200);
         }
 
-        // Start the animation sequence
-        setTimeout(startMouseAnimation, 3000); // Wait for loading screen to finish
+        function toggleMaximizeWindow() {
+            if (mainPageWindow.classList.contains('maximized')) {
+                // This part is for restoring, currently only user can trigger restore to proceed
+                // If we wanted automated restore, it would go here.
+                // For now, user click handles the "restore" action that leads to redirect.
+                 mainPageWindow.classList.remove('maximized', 'is-maximizing');
+                 mainPageWindow.style.top = originalWindowState.top;
+                 mainPageWindow.style.left = originalWindowState.left;
+                 mainPageWindow.style.width = originalWindowState.width;
+                 mainPageWindow.style.height = originalWindowState.height;
+                 mainPageWindow.style.borderRadius = originalWindowState.borderRadius;
 
-        // Add hover effects to desktop icons
-        document.querySelectorAll('.desktop-icon').forEach(icon => {
-            icon.addEventListener('mouseenter', () => {
-                icon.style.transform = 'scale(1.05)';
-            });
-            
-            icon.addEventListener('mouseleave', () => {
-                icon.style.transform = 'scale(1)';
-            });
+                // Hide prompt if window is restored by other means (not part of current flow)
+                userActionPrompt.classList.remove('show');
+
+            } else { // Maximize the window
+                const rect = mainPageWindow.getBoundingClientRect();
+                originalWindowState = { // Store state before maximizing
+                    top: mainPageWindow.style.top || (rect.top + 'px'), // Use inline style or calculated
+                    left: mainPageWindow.style.left || (rect.left + 'px'),
+                    width: mainPageWindow.style.width || (rect.width + 'px'),
+                    height: mainPageWindow.style.height || (rect.height + 'px'),
+                    borderRadius: getComputedStyle(mainPageWindow).borderRadius
+                };
+
+                // Set current position/size for transition source
+                mainPageWindow.style.top = rect.top + 'px';
+                mainPageWindow.style.left = rect.left + 'px';
+                mainPageWindow.style.width = rect.width + 'px';
+                mainPageWindow.style.height = rect.height + 'px';
+                // No need to set border radius here, is-maximizing will handle it.
+
+                void mainPageWindow.offsetWidth; // Force reflow
+
+                mainPageWindow.classList.add('is-maximizing'); // Add class for transition start
+
+                // Set target styles for the maximized state (CSS will also apply these via .maximized)
+                mainPageWindow.style.top = '0px';
+                mainPageWindow.style.left = '0px';
+                mainPageWindow.style.width = '100vw';
+                mainPageWindow.style.height = `calc(100vh - ${document.querySelector('.taskbar').offsetHeight}px)`;
+                mainPageWindow.style.borderRadius = '0px';
+
+
+                mainPageWindow.addEventListener('transitionend', function onMaximizeEnd() {
+                    mainPageWindow.removeEventListener('transitionend', onMaximizeEnd);
+                    mainPageWindow.classList.remove('is-maximizing');
+                    mainPageWindow.classList.add('maximized');
+
+                    // Clean up inline styles that are now handled by the .maximized class
+                    // This isn't strictly necessary if .maximized has !important, but good practice.
+                    // mainPageWindow.style.top = '';
+                    // mainPageWindow.style.left = '';
+                    // mainPageWindow.style.width = '';
+                    // mainPageWindow.style.height = '';
+                    // mainPageWindow.style.borderRadius = '';
+
+
+                    isCustomCursorInteractive = true; // Unlock mouse for user
+                    setupIframeInteraction(); // Ensure iframe interaction is set up
+
+                    // Show the prompt for user to click restore
+                    userActionPrompt.classList.add('show');
+                }, { once: true });
+            }
+        }
+
+        // --- User-Triggered Action (Clicking Restore Button) ---
+        maximizeButton.addEventListener('click', () => {
+            // This listener is for USER clicks.
+            // It should only act if the window is maximized and cursor is interactive.
+            if (isCustomCursorInteractive && mainPageWindow.classList.contains('maximized')) {
+                // Hide the prompt as user is taking action
+                userActionPrompt.classList.remove('show');
+                fadeAndRedirect();
+            } else if (isCustomCursorInteractive && !mainPageWindow.classList.contains('maximized')){
+                 // If user clicks maximize on a non-maximized window (manually)
+                 // This part is not hit by the auto-sequence for the first maximize.
+                 // toggleMaximizeWindow(); // Allow manual maximize/restore too
+            }
         });
 
-        // Add click handlers to taskbar items
-        document.querySelectorAll('.taskbar-app, .start-button').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.target.style.background = 'rgba(0, 120, 212, 0.5)';
-                setTimeout(() => {
-                    e.target.style.background = '';
-                }, 200);
-            });
-        });
+
+        // Fade to white and redirect
+        function fadeAndRedirect() {
+            console.log("Fade and redirect initiated.");
+            fadeOverlay.classList.add('show');
+            setTimeout(() => {
+                window.location.href = 'mainpage.html';
+            }, 700); // Allow fade animation
+        }
+
+        // Window Close Function
+        closeButton.addEventListener('click', closeWindow);
+        function closeWindow() {
+            mainPageWindow.classList.remove('show', 'maximized', 'is-maximizing');
+            windowOverlay.classList.remove('show');
+            userActionPrompt.classList.remove('show'); // Hide prompt if window is closed
+            setTimeout(() => {
+                 mainPageWindow.style.top = '12%';
+                 mainPageWindow.style.left = '7.5%';
+                 mainPageWindow.style.width = '85%';
+                 mainPageWindow.style.height = '75%';
+                 mainPageWindow.style.borderRadius = '8px'; // Reset border radius
+            }, 300);
+            isCustomCursorInteractive = false;
+        }
+
+        // Start the whole sequence
+        setTimeout(startMouseAnimation, 3000); // After loading screen
+
     </script>
 </body>
 </html>
