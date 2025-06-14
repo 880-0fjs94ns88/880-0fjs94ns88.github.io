@@ -16,11 +16,11 @@
         }
         /* Animation for feedback on admin actions */
         @keyframes flash-green {
-            0%, 100% { background-color: #2f3747; } /* bg-gray-700 */
+            0%, 100% { background-color: #374151; } /* bg-gray-700 */
             50% { background-color: #166534; } /* bg-green-800 */
         }
         @keyframes flash-red {
-            0%, 100% { background-color: #2f3747; } /* bg-gray-700 */
+            0%, 100% { background-color: #374151; } /* bg-gray-700 */
             50% { background-color: #991b1b; } /* bg-red-800 */
         }
         .flash-green {
@@ -39,27 +39,23 @@
         <!-- View 1: Main page for submitting a username            -->
         <!-- ====================================================== -->
         <div id="submit-view" class="view bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
-            <h1 class="text-3xl font-bold text-center text-cyan-400 mb-2">Create Your Appeal Link</h1>
-            <p class="text-center text-gray-400 mb-6">Enter your username to generate a shareable link to track your ban appeal status.</p>
+            <h1 class="text-3xl font-bold text-center text-cyan-400 mb-2">Submit Your Appeal</h1>
+            <p class="text-center text-gray-400 mb-6">Enter your username and a reason for your appeal. You will be redirected to your status page.</p>
             <form id="user-form" class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username</label>
                     <input type="text" id="username" name="username" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none" placeholder="e.g., JohnDoe" required>
                 </div>
+                <div>
+                    <label for="reason" class="block text-sm font-medium text-gray-300 mb-1">Reason for Appeal</label>
+                    <textarea id="reason" name="reason" rows="4" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none" placeholder="Please provide a brief reason for your appeal..." required></textarea>
+                </div>
                 <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-                    Generate Link
+                    Submit and View Status
                 </button>
             </form>
-            <div id="generated-link-container" class="mt-6 hidden">
-                <label class="block text-sm font-medium text-gray-300 mb-1">Your personal link:</label>
-                <div class="flex items-center space-x-2">
-                    <input type="text" id="generated-link" readonly class="w-full bg-gray-900 border border-gray-700 text-gray-300 rounded-lg p-3">
-                    <button id="copy-button" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg">Copy</button>
-                </div>
-                <p id="copy-feedback" class="text-sm text-green-400 mt-2 h-4"></p>
-            </div>
              <div class="text-center mt-6">
-                <a href="?admin" class="text-sm text-gray-500 hover:text-cyan-400">View Admin Panel &rarr;</a>
+                <a href="/appeal/?admin" class="text-sm text-gray-500 hover:text-cyan-400">View Admin Panel &rarr;</a>
             </div>
         </div>
 
@@ -72,7 +68,7 @@
             <div id="status-box" class="p-6 rounded-lg text-xl font-semibold">
                 <!-- Status message will be injected here by JS -->
             </div>
-            <a href="/sitetesting" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+            <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
         </div>
 
         <!-- ====================================================== -->
@@ -88,7 +84,7 @@
                 <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Login</button>
                 <p id="login-error" class="text-sm text-red-400 text-center h-4"></p>
             </form>
-             <a href="/sitetesting/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+             <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
         </div>
 
         <!-- ====================================================== -->
@@ -103,7 +99,7 @@
                 <div id="user-list" class="space-y-4">
                     <!-- User list will be populated by JS -->
                 </div>
-                <a href="/sitetesting/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+                <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
              </div>
         </div>
 
@@ -118,10 +114,7 @@
         
         const userForm = document.getElementById('user-form');
         const usernameInput = document.getElementById('username');
-        const generatedLinkContainer = document.getElementById('generated-link-container');
-        const generatedLinkInput = document.getElementById('generated-link');
-        const copyButton = document.getElementById('copy-button');
-        const copyFeedback = document.getElementById('copy-feedback');
+        const reasonInput = document.getElementById('reason');
         
         const userDisplayName = document.getElementById('user-display-name');
         const statusBox = document.getElementById('status-box');
@@ -170,7 +163,10 @@
             userView.classList.remove('hidden');
 
             const appeals = getAppeals();
-            const status = appeals[username] || 'not_found';
+            const appeal = appeals[username];
+            // Handle both new object format and old string format for backward compatibility
+            const status = appeal ? (typeof appeal === 'object' ? appeal.status : appeal) : 'not_found';
+            
             userDisplayName.textContent = username;
 
             let message = '';
@@ -211,12 +207,15 @@
                 return;
             }
 
-            Object.entries(appeals).forEach(([username, status]) => {
+            Object.entries(appeals).forEach(([username, appealData]) => {
                 const userElement = document.createElement('div');
-                // Assign a unique ID to each user row for easy targeting
                 userElement.id = `admin-user-${username}`;
                 userElement.className = 'bg-gray-700 p-4 rounded-lg flex items-center justify-between transition-all duration-300';
                 
+                // Handle both new object format and old string format
+                const status = typeof appealData === 'object' ? appealData.status : appealData;
+                const reason = typeof appealData === 'object' ? (appealData.reason || 'No reason provided.') : 'No reason provided.';
+
                 let statusColorClass = '';
                  switch(status) {
                     case 'accepted': statusColorClass = 'text-green-400'; break;
@@ -225,13 +224,14 @@
                 }
 
                 userElement.innerHTML = `
-                    <div>
+                    <div class="flex-grow pr-4">
                         <p class="font-bold text-lg">${username}</p>
-                        <p class="text-sm ${statusColorClass} capitalize">${status}</p>
+                        <p class="text-sm ${statusColorClass} capitalize font-semibold">${status}</p>
+                        <p class="text-sm text-gray-300 mt-2"><strong>Reason:</strong> ${reason}</p>
                     </div>
-                    <div class="flex space-x-2">
-                        <button data-user="${username}" data-status="accepted" class="admin-action-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-md text-sm">Accept</button>
-                        <button data-user="${username}" data-status="rejected" class="admin-action-btn bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-md text-sm">Reject</button>
+                    <div class="flex flex-col space-y-2">
+                        <button data-user="${username}" data-status="accepted" class="admin-action-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-md text-sm">Accept</button>
+                        <button data-user="${username}" data-status="rejected" class="admin-action-btn bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm">Reject</button>
                     </div>
                 `;
                 userList.appendChild(userElement);
@@ -242,34 +242,26 @@
         userForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const username = usernameInput.value.trim();
-            if (!username) return;
+            const reason = reasonInput.value.trim();
+            if (!username || !reason) return;
+            
             const appeals = getAppeals();
-            if (!appeals[username]) {
-                appeals[username] = 'pending';
-                saveAppeals(appeals);
-            }
-            const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(username)}`;
-            generatedLinkInput.value = url;
-            generatedLinkContainer.classList.remove('hidden');
-            usernameInput.value = '';
-        });
+            
+            // Store appeal as an object with status and reason
+            appeals[username] = {
+                status: 'pending',
+                reason: reason
+            };
+            saveAppeals(appeals);
 
-        copyButton.addEventListener('click', () => {
-            generatedLinkInput.select();
-            try {
-                document.execCommand('copy');
-                copyFeedback.textContent = 'Copied!';
-                setTimeout(() => { copyFeedback.textContent = '' }, 2000);
-            } catch (err) {
-                copyFeedback.textContent = 'Failed to copy.';
-                setTimeout(() => { copyFeedback.textContent = '' }, 2000);
-            }
+            // Generate URL and redirect the user
+            const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(username)}`;
+            window.location.href = url;
         });
 
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (passwordInput.value === ADMIN_PASSWORD) {
-                // Use sessionStorage to "remember" login for the session
                 sessionStorage.setItem('isAdminLoggedIn', 'true');
                 showAdminView();
             } else {
@@ -281,7 +273,6 @@
 
         logoutButton.addEventListener('click', () => {
             sessionStorage.removeItem('isAdminLoggedIn');
-            // Redirect to login page after logout
             window.location.search = '?admin';
         });
 
@@ -291,10 +282,17 @@
                 const newStatus = e.target.dataset.status;
                 
                 const appeals = getAppeals();
-                appeals[username] = newStatus;
-                saveAppeals(appeals);
+                const appeal = appeals[username];
 
-                // Re-render the list to show the change
+                // Update status, preserving reason
+                if (typeof appeal === 'object' && appeal !== null) {
+                    appeal.status = newStatus;
+                } else {
+                    // If it's the old string format, upgrade it
+                    appeals[username] = { status: newStatus, reason: 'N/A' };
+                }
+                saveAppeals(appeals);
+                
                 renderAdminList();
                 
                 // Add flash effect for visual feedback
@@ -316,7 +314,6 @@
             const isAdminPage = params.has('admin');
 
             if (isAdminPage) {
-                // Check if user is already logged in via session
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     showAdminView();
                 } else {
