@@ -35,9 +35,8 @@
 
     <div class="w-full max-w-2xl p-4">
 
-        <!-- ====================================================== -->
-        <!-- View 1: Main page for submitting a username            -->
-        <!-- ====================================================== -->
+        <!-- All HTML views (submit, user, login, admin) remain the same -->
+        <!-- View 1: Submit Appeal -->
         <div id="submit-view" class="view bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
             <h1 class="text-3xl font-bold text-center text-cyan-400 mb-2">Submit Your Appeal</h1>
             <p class="text-center text-gray-400 mb-6">Enter your username and a reason for your appeal. You will be redirected to your status page.</p>
@@ -55,26 +54,20 @@
                 </button>
             </form>
              <div class="text-center mt-6">
-                <a href="/appeal/?admin" class="text-sm text-gray-500 hover:text-cyan-400">View Admin Panel &rarr;</a>
+                <a href="?admin" class="text-sm text-gray-500 hover:text-cyan-400">View Admin Panel &rarr;</a>
             </div>
         </div>
-
-        <!-- ====================================================== -->
-        <!-- View 2: User-specific status page                      -->
-        <!-- ====================================================== -->
+        <!-- View 2: User Status -->
         <div id="user-view" class="view hidden bg-gray-800 p-8 rounded-xl shadow-2xl text-center max-w-md mx-auto">
             <p class="text-gray-400 mb-2">Appeal Status for</p>
             <h1 id="user-display-name" class="text-3xl font-bold text-cyan-400 mb-6"></h1>
             <div id="status-box" class="p-6 rounded-lg text-xl font-semibold">
                 <!-- Status message will be injected here by JS -->
             </div>
-            <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+             <a href="/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
         </div>
-
-        <!-- ====================================================== -->
-        <!-- View 3: Admin Login Screen                             -->
-        <!-- ====================================================== -->
-        <div id="login-view" class="view hidden bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
+        <!-- View 3: Admin Login -->
+         <div id="login-view" class="view hidden bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
             <h1 class="text-3xl font-bold text-center text-cyan-400 mb-6">Admin Login</h1>
             <form id="login-form" class="space-y-4">
                 <div>
@@ -84,12 +77,9 @@
                 <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Login</button>
                 <p id="login-error" class="text-sm text-red-400 text-center h-4"></p>
             </form>
-             <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+             <a href="/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
         </div>
-
-        <!-- ====================================================== -->
-        <!-- View 4: Admin Panel                                    -->
-        <!-- ====================================================== -->
+        <!-- View 4: Admin Panel -->
         <div id="admin-view" class="view hidden w-full">
              <div class="bg-gray-800 p-8 rounded-xl shadow-2xl">
                 <div class="flex justify-between items-center mb-6">
@@ -97,48 +87,55 @@
                     <button id="logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md text-sm">Logout</button>
                 </div>
                 <div id="user-list" class="space-y-4">
-                    <!-- User list will be populated by JS -->
+                    <p class="text-center text-gray-400">Loading appeals...</p>
                 </div>
-                <a href="/appeal/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
+                <a href="/" class="inline-block mt-8 text-sm text-gray-500 hover:text-cyan-400">&larr; Back to Home</a>
              </div>
         </div>
 
     </div>
+    
+    <!-- ====================================================== -->
+    <!-- NEW: Firebase SDK Scripts -->
+    <!-- ====================================================== -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    <script>
-        // DOM Elements
+        // --- Firebase Configuration ---
+        // This is your personal configuration object from the Firebase console.
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-Xiuh-YkZ6hMpiFVXohgFcQg2u6IBY4E",
+            authDomain: "ban-appeal-system.firebaseapp.com",
+            projectId: "ban-appeal-system",
+            storageBucket: "ban-appeal-system.appspot.com",
+            messagingSenderId: "954510998231",
+            appId: "1:954510998231:web:91e2afb3b0a47df2570e92",
+            measurementId: "G-LYP05S5W1K"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+
+        // --- DOM Elements (No changes here) ---
         const submitView = document.getElementById('submit-view');
         const userView = document.getElementById('user-view');
         const loginView = document.getElementById('login-view');
         const adminView = document.getElementById('admin-view');
-        
         const userForm = document.getElementById('user-form');
         const usernameInput = document.getElementById('username');
         const reasonInput = document.getElementById('reason');
-        
         const userDisplayName = document.getElementById('user-display-name');
         const statusBox = document.getElementById('status-box');
-        
         const loginForm = document.getElementById('login-form');
         const passwordInput = document.getElementById('password');
         const loginError = document.getElementById('login-error');
-        
         const userList = document.getElementById('user-list');
         const logoutButton = document.getElementById('logout-button');
-
-        // --- CONFIGURATION ---
-        const STORAGE_KEY = 'banAppeals';
-        const ADMIN_PASSWORD = 'password123'; // Hardcoded password for this static example
-
-        // --- DATA FUNCTIONS (using localStorage) ---
-        function getAppeals() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : {};
-        }
-
-        function saveAppeals(appeals) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appeals));
-        }
+        const ADMIN_PASSWORD = 'errorrailiscool';
         
         // --- VIEW RENDERING & ROUTING ---
         function hideAllViews() {
@@ -158,16 +155,19 @@
             loginView.classList.remove('hidden');
         }
 
-        function showUserStatusView(username) {
+        async function showUserStatusView(username) {
             hideAllViews();
             userView.classList.remove('hidden');
-
-            const appeals = getAppeals();
-            const appeal = appeals[username];
-            // Handle both new object format and old string format for backward compatibility
-            const status = appeal ? (typeof appeal === 'object' ? appeal.status : appeal) : 'not_found';
-            
             userDisplayName.textContent = username;
+            
+            // NEW: Fetch data from Firestore
+            const appealRef = doc(db, "appeals", username);
+            const appealSnap = await getDoc(appealRef);
+
+            let status = 'not_found';
+            if (appealSnap.exists()) {
+                status = appealSnap.data().status;
+            }
 
             let message = '';
             let boxClass = '';
@@ -195,27 +195,30 @@
         function showAdminView() {
             hideAllViews();
             adminView.classList.remove('hidden');
-            renderAdminList();
+            // NEW: Set up a real-time listener for appeals
+            onSnapshot(collection(db, "appeals"), (snapshot) => {
+                const appeals = [];
+                snapshot.forEach((doc) => {
+                    appeals.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminList(appeals);
+            });
         }
         
-        function renderAdminList() {
-            const appeals = getAppeals();
+        function renderAdminList(appeals) {
             userList.innerHTML = ''; // Clear previous list
 
-            if (Object.keys(appeals).length === 0) {
+            if (appeals.length === 0) {
                 userList.innerHTML = `<p class="text-center text-gray-500">No appeals have been submitted yet.</p>`;
                 return;
             }
 
-            Object.entries(appeals).forEach(([username, appealData]) => {
+            appeals.forEach(appeal => {
+                const { id: username, status, reason } = appeal;
                 const userElement = document.createElement('div');
                 userElement.id = `admin-user-${username}`;
                 userElement.className = 'bg-gray-700 p-4 rounded-lg flex items-center justify-between transition-all duration-300';
                 
-                // Handle both new object format and old string format
-                const status = typeof appealData === 'object' ? appealData.status : appealData;
-                const reason = typeof appealData === 'object' ? (appealData.reason || 'No reason provided.') : 'No reason provided.';
-
                 let statusColorClass = '';
                  switch(status) {
                     case 'accepted': statusColorClass = 'text-green-400'; break;
@@ -227,7 +230,7 @@
                     <div class="flex-grow pr-4">
                         <p class="font-bold text-lg">${username}</p>
                         <p class="text-sm ${statusColorClass} capitalize font-semibold">${status}</p>
-                        <p class="text-sm text-gray-300 mt-2"><strong>Reason:</strong> ${reason}</p>
+                        <p class="text-sm text-gray-300 mt-2"><strong>Reason:</strong> ${reason || 'No reason provided.'}</p>
                     </div>
                     <div class="flex flex-col space-y-2">
                         <button data-user="${username}" data-status="accepted" class="admin-action-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-md text-sm">Accept</button>
@@ -239,22 +242,21 @@
         }
         
         // --- EVENT HANDLERS ---
-        userForm.addEventListener('submit', (e) => {
+        userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = usernameInput.value.trim();
             const reason = reasonInput.value.trim();
             if (!username || !reason) return;
             
-            const appeals = getAppeals();
-            
-            // Store appeal as an object with status and reason
-            appeals[username] = {
+            // NEW: Save data to Firestore
+            // We use the username as the unique ID for the document.
+            await setDoc(doc(db, "appeals", username), {
                 status: 'pending',
-                reason: reason
-            };
-            saveAppeals(appeals);
+                reason: reason,
+                submittedAt: new Date() // Store a timestamp
+            });
 
-            // Generate URL and redirect the user
+            // Redirect the user
             const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(username)}`;
             window.location.href = url;
         });
@@ -276,26 +278,19 @@
             window.location.search = '?admin';
         });
 
-        adminView.addEventListener('click', (e) => {
+        adminView.addEventListener('click', async (e) => {
             if (e.target.classList.contains('admin-action-btn')) {
                 const username = e.target.dataset.user;
                 const newStatus = e.target.dataset.status;
                 
-                const appeals = getAppeals();
-                const appeal = appeals[username];
-
-                // Update status, preserving reason
-                if (typeof appeal === 'object' && appeal !== null) {
-                    appeal.status = newStatus;
-                } else {
-                    // If it's the old string format, upgrade it
-                    appeals[username] = { status: newStatus, reason: 'N/A' };
-                }
-                saveAppeals(appeals);
+                // NEW: Update data in Firestore
+                const appealRef = doc(db, "appeals", username);
+                await updateDoc(appealRef, {
+                    status: newStatus
+                });
                 
-                renderAdminList();
-                
-                // Add flash effect for visual feedback
+                // The onSnapshot listener will handle re-rendering automatically,
+                // but we can add the flash effect here for immediate feedback.
                 const userRow = document.getElementById(`admin-user-${username}`);
                 if (userRow) {
                     const flashClass = newStatus === 'accepted' ? 'flash-green' : 'flash-red';
