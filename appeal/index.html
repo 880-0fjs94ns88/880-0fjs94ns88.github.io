@@ -29,6 +29,11 @@
         .flash-red {
             animation: flash-red 0.7s ease-out;
         }
+        /* Style for disabled button */
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
@@ -53,6 +58,8 @@
                     Submit and View Status
                 </button>
             </form>
+             <!-- NEW: Error message container -->
+             <p id="submit-error" class="text-sm text-red-400 text-center h-4 mt-4"></p>
              <div class="text-center mt-6">
                 <a href="?admin" class="text-sm text-gray-500 hover:text-cyan-400">View Admin Panel &rarr;</a>
             </div>
@@ -136,6 +143,9 @@
         const userList = document.getElementById('user-list');
         const logoutButton = document.getElementById('logout-button');
         const ADMIN_PASSWORD = 'errorrailiscool';
+        // NEW: References for submit button and its error message
+        const submitButton = document.querySelector('#user-form button[type="submit"]');
+        const submitError = document.getElementById('submit-error');
         
         // --- VIEW RENDERING & ROUTING ---
         function hideAllViews() {
@@ -246,19 +256,41 @@
             e.preventDefault();
             const username = usernameInput.value.trim();
             const reason = reasonInput.value.trim();
-            if (!username || !reason) return;
             
-            // NEW: Save data to Firestore
-            // We use the username as the unique ID for the document.
-            await setDoc(doc(db, "appeals", username), {
-                status: 'pending',
-                reason: reason,
-                submittedAt: new Date() // Store a timestamp
-            });
+            if (!username || !reason) {
+                submitError.textContent = 'Username and reason cannot be empty.';
+                setTimeout(() => { submitError.textContent = '' }, 3000);
+                return;
+            }
 
-            // Redirect the user
-            const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(username)}`;
-            window.location.href = url;
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+            submitError.textContent = ''; // Clear previous errors
+
+            try {
+                // Save data to Firestore
+                await setDoc(doc(db, "appeals", username), {
+                    status: 'pending',
+                    reason: reason,
+                    submittedAt: new Date() // Store a timestamp
+                });
+
+                // Redirect the user on success
+                const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(username)}`;
+                window.location.href = url;
+
+            } catch (error) {
+                // Log the full error to the console for debugging
+                console.error("Error submitting appeal:", error);
+                
+                // Show a user-friendly error message
+                submitError.textContent = 'Submission failed. Please try again.';
+                
+                // Re-enable the button so the user can try again
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit and View Status';
+            }
         });
 
         loginForm.addEventListener('submit', (e) => {
@@ -283,7 +315,7 @@
                 const username = e.target.dataset.user;
                 const newStatus = e.target.dataset.status;
                 
-                // NEW: Update data in Firestore
+                // Update data in Firestore
                 const appealRef = doc(db, "appeals", username);
                 await updateDoc(appealRef, {
                     status: newStatus
