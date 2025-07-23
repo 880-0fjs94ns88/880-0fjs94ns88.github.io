@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Discord Embed Meta Tags -->
-    <meta property="og:title" content="click the bart">
-    <meta property="og:description" content="bart">
+    <meta property="og:title" content="Click The Bart Game">
+    <meta property="og:description" content="A fun, simple game with a persistent score! Click Bart to hear a sound!">
     <meta property="og:image" content="https://www.errorrail.dev/database/Untitled.png">
     <meta name="theme-color" content="#facc15">
 
@@ -28,6 +28,27 @@
         }
         .clicked {
             animation: click-effect 0.3s ease-in-out;
+        }
+
+        /* --- One-time backflip animation --- */
+        @keyframes backflip {
+            from { transform: rotateX(0deg); }
+            to { transform: rotateX(360deg); }
+        }
+        .do-flip {
+            animation: backflip 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- Swaying Animation for Score Text --- */
+        @keyframes seesaw {
+            0% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+            100% { transform: rotate(-8deg); }
+        }
+        .swaying-text {
+            display: inline-block; /* Required for transform to work correctly */
+            transform-origin: top center;
+            animation: seesaw 4s infinite ease-in-out;
         }
 
         /* --- Transition Animations --- */
@@ -64,59 +85,168 @@
              alt="Click The Bart Title" 
              class="w-full max-w-md mb-8"
              onerror="this.onerror=null;this.src='https://placehold.co/600x200/fef08a/000000?text=Click+The+Bart';">
-        <!-- A simple, clean button -->
         <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow">
             play
         </button>
     </div>
 
     <!-- Main Game Content (Initially Hidden) -->
-    <div id="gameContent" class="hidden opacity-0">
-        <img id="bartImage" 
-             src="https://img.itch.zone/aW1nLzE4ODgzNTUwLnBuZw==/original/d8jA2W.png" 
-             alt="bart"
-             class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
-             onerror="this.onerror=null;this.src='https://placehold.co/512x512/facc15/000000?text=Bart';">
+    <div id="gameContent" class="hidden opacity-0 text-center">
+        <!-- Wrapper for the Bart image to handle the flip separately from the click -->
+        <div id="bartWrapper" style="display: inline-block;">
+            <img id="bartImage" 
+                 src="https://img.itch.zone/aW1nLzE4ODgzNTUwLnBuZw==/original/d8jA2W.png" 
+                 alt="A cartoon character that looks like Bart Simpson"
+                 class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
+                 onerror="this.onerror=null;this.src='https://placehold.co/512x512/facc15/000000?text=Bart';">
+        </div>
+        <div class="mt-6 space-y-2">
+             <!-- Personal score is now the only thing centered below Bart -->
+             <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Loading score...</p>
+        </div>
+    </div>
+    
+    <!-- NEW: Top score element positioned in the corner -->
+    <div id="topScoreContainer" class="hidden fixed top-4 right-4 z-10 bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg">
+        <p id="globalHighScore" class="text-lg font-medium">Top Score: Loading...</p>
     </div>
          
-    <script>
+    <script type="module">
+        // --- Firebase SDK Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
         // --- DOM Element Selection ---
         const titleScreen = document.getElementById('titleScreen');
         const startButton = document.getElementById('startButton');
         const gameContent = document.getElementById('gameContent');
         const bartImage = document.getElementById('bartImage');
+        const bartWrapper = document.getElementById('bartWrapper');
+        const scoreCounter = document.getElementById('scoreCounter');
+        const globalHighScoreEl = document.getElementById('globalHighScore');
+        const topScoreContainer = document.getElementById('topScoreContainer'); // New container element
 
         // --- Audio Setup ---
         const clickSound = new Audio('https://www.errorrail.dev/database/clickthebart.mp3');
         clickSound.preload = 'auto';
 
+        // --- Game Logic Variables ---
+        let db, auth, userId, scoreDocRef, globalScoreDocRef;
+        let localScore = 0;
+        let globalHighScore = 0;
+        let isClickLocked = false; 
+        
+        // --- Anti-Autoclicker Variables ---
+        let lastClickTime = 0;
+        const MIN_CLICK_DELAY = 220;
+
+        // --- Your Personal Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAsbxHc5MiEIKekQyJcHQ1qjE_xLwmXZRo",
+            authDomain: "click-the-bart.firebaseapp.com",
+            databaseURL: "https://click-the-bart-default-rtdb.firebaseio.com",
+            projectId: "click-the-bart",
+            storageBucket: "click-the-bart.appspot.com",
+            messagingSenderId: "825674005149",
+            appId: "1:825674005149:web:de6f0440fe270c1f33b274",
+            measurementId: "G-V7XHJRG2RX"
+        };
+
+        // --- Firebase Initialization and Setup ---
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                await signInAnonymously(auth);
+                
+                userId = auth.currentUser.uid;
+                scoreDocRef = doc(db, `userScores/bart-clicker/${userId}`, 'scoreData');
+                globalScoreDocRef = doc(db, 'globalScores', 'bart-clicker-high-score');
+
+                // Listener for the user's personal score
+                onSnapshot(scoreDocRef, (doc) => {
+                    if (doc.exists()) {
+                        localScore = doc.data().count || 0;
+                        scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                    } else {
+                        setDoc(scoreDocRef, { count: 0 });
+                        scoreCounter.textContent = 'Your Clicks: 0';
+                    }
+                });
+
+                // Listener for the global high score
+                onSnapshot(globalScoreDocRef, (doc) => {
+                    if (doc.exists()) {
+                        globalHighScore = doc.data().topScore || 0;
+                        globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                    } else {
+                        setDoc(globalScoreDocRef, { topScore: 0 });
+                        globalHighScoreEl.textContent = 'Top Score: 0';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                scoreCounter.textContent = "Error loading score.";
+            }
+        }
+
         // --- Event Listeners ---
         startButton.addEventListener('click', () => {
-            startButton.disabled = true; // Prevent multiple clicks
-
-            // --- Start Fly-Up Transition ---
-
-            // 1. Make title screen fly up
+            startButton.disabled = true; 
             titleScreen.classList.add('animate-fly-up');
 
-            // 2. After animation, hide title and show/fade in game
             setTimeout(() => {
                 titleScreen.style.display = 'none';
-                
-                // Show and fade in the final game content
                 gameContent.classList.remove('hidden');
                 gameContent.classList.add('animate-fade-in');
                 
-            }, 800); // Matches the fly-up animation duration
+                // Also fade in the top score container
+                topScoreContainer.classList.remove('hidden');
+                topScoreContainer.classList.add('animate-fade-in');
+            }, 800);
         });
 
-        // Event listener for the Bart image
-        bartImage.addEventListener('click', () => {
+        bartImage.addEventListener('click', async () => {
+            const currentTime = Date.now();
+            if (isClickLocked || (currentTime - lastClickTime < MIN_CLICK_DELAY)) {
+                return;
+            }
+            lastClickTime = currentTime;
+
             clickSound.currentTime = 0;
             clickSound.play();
+
             bartImage.classList.add('clicked');
             setTimeout(() => bartImage.classList.remove('clicked'), 300);
+
+            const newScore = localScore + 1;
+
+            if (newScore > 0 && newScore % 100 === 0) {
+                isClickLocked = true; 
+                bartWrapper.classList.add('do-flip');
+                setTimeout(() => {
+                    bartWrapper.classList.remove('do-flip');
+                }, 800);
+            }
+
+            // Update the user's personal score
+            await setDoc(scoreDocRef, { count: newScore }, { merge: true });
+
+            // Check if the new score is a global high score
+            if (newScore > globalHighScore) {
+                await setDoc(globalScoreDocRef, { topScore: newScore });
+            }
         });
+
+        clickSound.addEventListener('ended', () => {
+            isClickLocked = false;
+        });
+
+        initFirebase();
     </script>
 </body>
 </html>
