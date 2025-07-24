@@ -107,13 +107,13 @@
                  onerror="this.onerror=null;this.src='https://placehold.co/256x256/facc15/000000?text=Bart';">
         </div>
         <div class="mt-6 space-y-2">
-             <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Connecting...</p>
+             <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Your Clicks: 0</p>
         </div>
     </div>
     
     <!-- Top score element positioned in the corner -->
     <div id="topScoreContainer" class="hidden fixed top-4 right-4 z-10 bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg">
-        <p id="globalHighScore" class="text-lg font-medium">Connecting...</p>
+        <p id="globalHighScore" class="text-lg font-medium">Top Score: 0</p>
     </div>
         
     <script type="module">
@@ -147,15 +147,15 @@
         
         // --- Anti-Autoclicker Variables ---
         let lastClickTime = 0;
-        const MIN_CLICK_DELAY = 50;
+        const MIN_CLICK_DELAY = 200; // Allows ~5 clicks per second
         const clickTimestamps = [];
-        const ANTI_CLICKER_THRESHOLD = 6;
+        const ANTI_CLICKER_THRESHOLD = 8; // Check after 8 clicks
+        const MAX_JITTER_MS = 15; // Max allowed deviation for intervals
 
         // --- Firebase Initialization and Setup ---
         function initializeFirebase() {
             try {
                 // Hardcoded Firebase configuration for deployment.
-                // This is the key fix for the "Firebase config not found" error on your live site.
                 const firebaseConfig = {
                     apiKey: "AIzaSyAsbxHc5MiEIKekQyJcHQ1qjE_xLwmXZRo",
                     authDomain: "click-the-bart.firebaseapp.com",
@@ -178,7 +178,7 @@
                         dbConnected = true;
                         if (unsubscribePersonal) unsubscribePersonal();
                         if (unsubscribeGlobal) unsubscribeGlobal();
-                        setupFirestoreListeners();
+                        setupFirestoreListeners(); 
                     } else {
                         console.log("User is not signed in. Attempting to sign in anonymously.");
                         signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
@@ -187,52 +187,72 @@
 
             } catch (error) {
                 console.error("Critical Firebase initialization error:", error);
-                scoreCounter.textContent = "Offline Mode";
-                globalHighScoreEl.textContent = "Top Score: Offline";
+                // Don't show an error to the user, just log it.
             }
         }
 
         // Sets up the real-time data listeners
         function setupFirestoreListeners() {
             try {
-                // The app ID for the database path.
-                const appId = 'default-bart-clicker';
+                const appId = "click-the-bart";
 
-                scoreDocRef = doc(db, `artifacts/${appId}/users/${userId}`, 'scoreData');
-                globalScoreDocRef = doc(db, `artifacts/${appId}/public/data`, 'globalHighScore');
+                // --- CORRECTED PATHS ---
+                scoreDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                globalScoreDocRef = doc(db, 'artifacts', appId, 'public', 'globalData');
                 
                 unsubscribePersonal = onSnapshot(scoreDocRef, (docSnap) => {
-                    localScore = docSnap.exists() ? docSnap.data().count || 0 : 0;
+                    if (docSnap.exists()) {
+                        localScore = docSnap.data().count || 0;
+                    } else {
+                        localScore = 0;
+                        setDoc(scoreDocRef, { count: 0 }); // Create the document if it doesn't exist
+                    }
                     scoreCounter.textContent = `Your Clicks: ${localScore}`;
                 }, (error) => {
                     console.error("Personal score listener failed:", error);
-                    scoreCounter.textContent = "Score Offline";
+                    // If it fails, the score just remains what it was locally. No error text.
                 });
 
                 unsubscribeGlobal = onSnapshot(globalScoreDocRef, (docSnap) => {
-                    globalHighScore = docSnap.exists() ? docSnap.data().topScore || 0 : 0;
+                    if (docSnap.exists()) {
+                        globalHighScore = docSnap.data().topScore || 0;
+                    } else {
+                        globalHighScore = 0;
+                        setDoc(globalScoreDocRef, { topScore: 0 }); // Create the document if it doesn't exist
+                    }
                     globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
                 }, (error) => {
                     console.error("Global score listener failed:", error);
-                    globalHighScoreEl.textContent = "Top Score: Offline";
+                    // If it fails, the top score just remains what it was. No error text.
                 });
 
             } catch (error) {
                 console.error("Firestore listener setup failed:", error);
-                scoreCounter.textContent = "Score Offline";
-                globalHighScoreEl.textContent = "Top Score: Offline";
+                 // Don't show an error to the user, just log it.
             }
         }
 
         // --- Anti-Autoclicker Functions ---
-        function checkForPerfectIntervals() {
+        function checkForBot() {
             if (clickTimestamps.length < ANTI_CLICKER_THRESHOLD) return false;
+            
             const recentIntervals = [];
             for (let i = clickTimestamps.length - 1; i > clickTimestamps.length - ANTI_CLICKER_THRESHOLD; i--) {
                 recentIntervals.push(clickTimestamps[i] - clickTimestamps[i - 1]);
             }
-            const firstInterval = recentIntervals[0];
-            return firstInterval > 10 && recentIntervals.every(interval => interval === firstInterval);
+            
+            const minInterval = Math.min(...recentIntervals);
+            const maxInterval = Math.max(...recentIntervals);
+            const jitter = maxInterval - minInterval;
+
+            console.log(`Click interval jitter: ${jitter}ms`);
+
+            // If the difference between the fastest and slowest click is too small, it's a bot.
+            if (jitter < MAX_JITTER_MS) {
+                return true; 
+            }
+            
+            return false;
         }
 
         async function triggerUnhappiness() {
@@ -261,18 +281,36 @@
         });
 
         bartImage.addEventListener('click', async () => {
+            // General lock to prevent spamming while an action is in progress.
+            if (isClickLocked) return;
+
             const currentTime = Date.now();
-            if (isClickLocked || (currentTime - lastClickTime < MIN_CLICK_DELAY)) return;
-            
+
+            // --- Log the click interval ---
+            if (lastClickTime > 0) {
+                const interval = currentTime - lastClickTime;
+                console.log(`Time since last click: ${interval}ms`);
+            }
+
+            // --- Anti-Autoclicker Logic runs on EVERY click ---
             clickTimestamps.push(currentTime);
             if (clickTimestamps.length > 20) clickTimestamps.shift();
 
-            if (checkForPerfectIntervals()) {
+            if (checkForBot()) {
                 await triggerUnhappiness();
-                return;
+                return; // Exit completely if cheating is detected
             }
-            
+
+            // --- Rate Limit Check ---
+            // This runs AFTER the anti-cheat check.
+            if (currentTime - lastClickTime < MIN_CLICK_DELAY) {
+                return; // Exit without increasing score if clicking too fast
+            }
+
+            // --- If all checks pass, proceed with a valid click ---
+            isClickLocked = true; // Lock clicks until sound/animation is done
             lastClickTime = currentTime;
+
             clickSound.currentTime = 0;
             clickSound.play().catch(e => console.error("Audio play failed:", e));
 
@@ -282,15 +320,24 @@
             localScore++;
             scoreCounter.textContent = `Your Clicks: ${localScore}`;
 
+            // --- 100-point milestone logic ---
             if (localScore > 0 && localScore % 100 === 0) {
-                isClickLocked = true; 
                 bartWrapper.classList.add('do-flip');
                 setTimeout(() => {
                     bartWrapper.classList.remove('do-flip');
-                    isClickLocked = false;
                 }, 800);
+                // **FIXED:** Use an event listener to unlock clicks only when the sound finishes.
+                clickSound.addEventListener('ended', () => {
+                    isClickLocked = false;
+                }, { once: true }); // { once: true } makes the listener self-destruct after one use.
+            } else {
+                // For normal clicks, unlock after a short, fixed delay.
+                setTimeout(() => {
+                    isClickLocked = false;
+                }, 300);
             }
-
+            
+            // --- Database Update ---
             if (dbConnected && scoreDocRef) {
                 setDoc(scoreDocRef, { count: localScore }, { merge: true });
                 if (localScore > globalHighScore) {
