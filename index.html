@@ -18,9 +18,8 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
+            overflow-y: auto;
             background-color: #fff;
-            transition: background-color 0.5s;
         }
 
         /* --- Click Animation for Bart --- */
@@ -67,54 +66,97 @@
 
         .animate-fade-in { animation: fade-in 0.5s forwards; }
         .animate-fly-up { animation: fly-up-out 0.8s forwards ease-in; }
-
-        /* --- Unhappiness Message --- */
-        #unhappiness-message {
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: opacity 0.5s ease-out;
-            z-index: 100;
+        
+        /* --- Chat Styles --- */
+        #chat-popup-container {
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        #chat-popup-container:hover {
+            height: 400px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        #chat-popup-label {
+            transition: opacity 0.2s ease-in-out;
+        }
+        #chat-popup-container:hover #chat-popup-label {
+            opacity: 0;
+        }
+        #chat-content {
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        #chat-popup-container:hover #chat-content {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #chat-messages {
+            scroll-behavior: smooth;
         }
     </style>
 </head>
-<body class="bg-white flex items-center justify-center min-h-screen p-4">
+<body class="bg-white">
     
-    <!-- Unhappiness Message -->
-    <div id="unhappiness-message" class="text-3xl font-bold text-red-600 opacity-0 pointer-events-none">
-        Bart is unhappy &gt;:(
-    </div>
-
-    <!-- Title Screen -->
-    <div id="titleScreen" class="flex flex-col items-center justify-center text-center">
-        <img src="https://www.errorrail.dev/database/Untitled.png" 
-             alt="Click The Bart Title" 
-             class="w-full max-w-md mb-8"
-             onerror="this.onerror=null;this.src='https://placehold.co/600x200/fef08a/000000?text=Click+The+Bart';">
-        <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow">
-            Play
-        </button>
-    </div>
-
-    <!-- Main Game Content (Initially Hidden) -->
-    <div id="gameContent" class="hidden opacity-0 text-center">
-        <div id="bartWrapper" style="display: inline-block;">
-            <img id="bartImage" 
-                 src="https://www.errorrail.dev/database/bartsimpson.png" 
-                 alt="bart simpson"
-                 class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
-                 onerror="this.onerror=null;this.src='https://placehold.co/256x256/facc15/000000?text=Bart';">
+    <!-- UI Overlay for corner elements -->
+    <div id="ui-overlay" class="fixed inset-0 pointer-events-none z-40">
+        <!-- Unhappiness Message -->
+        <div id="unhappiness-message" class="absolute top-1/4 left-1/2 -translate-x-1/2 text-3xl font-bold text-red-600 opacity-0">
+            Bart is unhappy &gt;:(
         </div>
-        <div class="mt-6 space-y-2">
-             <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Your Clicks: 0</p>
+
+        <!-- Top score element positioned in the corner -->
+        <div id="topScoreContainer" class="hidden absolute top-4 right-4 bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg pointer-events-auto">
+            <p id="globalHighScore" class="text-lg font-medium">Top Score: 0</p>
+        </div>
+
+        <!-- Pop-up Chat Bar -->
+        <div id="chat-popup-container" class="hidden absolute bottom-4 right-4 w-80 h-12 bg-gray-800 text-white rounded-t-lg cursor-pointer pointer-events-auto">
+            <div id="chat-popup-label" class="w-full h-full flex items-center justify-center font-bold">
+                Live Chat
+            </div>
+            <div id="chat-content" class="absolute bottom-0 left-0 w-full h-[400px] bg-gray-100 flex flex-col">
+                <div class="bg-gray-800 text-white p-2 text-center font-bold">Live Chat</div>
+                <div id="chat-messages" class="flex-grow overflow-y-scroll p-3 bg-white border-t border-b border-gray-300">
+                    <!-- Messages will appear here -->
+                </div>
+                <div class="p-2 bg-gray-200 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Say something..." class="flex-grow border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-black">
+                    <button id="send-button" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed">Send</button>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Top score element positioned in the corner -->
-    <div id="topScoreContainer" class="hidden fixed top-4 right-4 z-10 bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg">
-        <p id="globalHighScore" class="text-lg font-medium">Top Score: 0</p>
-    </div>
+    <!-- Main content wrapper for centering -->
+    <main class="flex flex-col items-center justify-center min-h-screen p-4">
+        <!-- Title Screen -->
+        <div id="titleScreen" class="flex flex-col items-center justify-center text-center">
+            <img src="https://www.errorrail.dev/database/Untitled.png" 
+                 alt="Click The Bart Title" 
+                 class="w-full max-w-md mb-8"
+                 onerror="this.outerHTML = `<div class='w-full max-w-md mb-8 flex items-center justify-center h-24 bg-red-100 text-red-700 rounded-lg border border-red-300'>Image couldn't load</div>`">
+            <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow">
+                Play
+            </button>
+        </div>
+
+        <!-- Main Game Content (Initially Hidden) -->
+        <div id="gameContent" class="hidden opacity-0 text-center">
+            <div id="bartWrapper" style="display: inline-block;">
+                <img id="bartImage" 
+                     src="https://www.errorrail.dev/database/bartsimpson.png" 
+                     alt="bart simpson"
+                     class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
+                     onerror="this.outerHTML = `<div id='bartImage' class='cursor-pointer rounded-lg w-48 md:w-64 h-64 flex items-center justify-center bg-red-100 text-red-700 rounded-lg border border-red-300'><p class='text-center'>Image couldn\'t load</p></div>`">
+            </div>
+            <div class="mt-6 space-y-2">
+                 <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Your Clicks: 0</p>
+            </div>
+        </div>
+    </main>
         
     <script type="module">
         console.log("Game script starting..."); // Debug log to confirm script execution.
@@ -122,18 +164,21 @@
         // --- Firebase SDK Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, query, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- DOM Element Selection ---
         const titleScreen = document.getElementById('titleScreen');
         const startButton = document.getElementById('startButton');
         const gameContent = document.getElementById('gameContent');
-        const bartImage = document.getElementById('bartImage');
         const bartWrapper = document.getElementById('bartWrapper');
         const scoreCounter = document.getElementById('scoreCounter');
         const globalHighScoreEl = document.getElementById('globalHighScore');
         const topScoreContainer = document.getElementById('topScoreContainer');
         const unhappinessMessage = document.getElementById('unhappiness-message');
+        const chatPopupContainer = document.getElementById('chat-popup-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
 
         // --- Audio Setup ---
         const clickSound = new Audio('https://www.errorrail.dev/database/clickthebart.mp3');
@@ -145,19 +190,18 @@
         let globalHighScore = 0;
         let isClickLocked = false; 
         let dbConnected = false;
-        let unsubscribePersonal, unsubscribeGlobal; // To detach listeners
+        let unsubscribePersonal, unsubscribeGlobal, unsubscribeChat;
         
         // --- Anti-Autoclicker Variables ---
         let lastClickTime = 0;
-        const MIN_CLICK_DELAY = 200; // Allows ~5 clicks per second
+        const MIN_CLICK_DELAY = 200;
         const clickTimestamps = [];
-        const ANTI_CLICKER_THRESHOLD = 8; // Check after 8 clicks
-        const MAX_JITTER_MS = 15; // Max allowed deviation for intervals
+        const ANTI_CLICKER_THRESHOLD = 8;
+        const MAX_JITTER_MS = 15;
 
         // --- Firebase Initialization and Setup ---
         function initializeFirebase() {
             try {
-                // Hardcoded Firebase configuration for deployment.
                 const firebaseConfig = {
                     apiKey: "AIzaSyAsbxHc5MiEIKekQyJcHQ1qjE_xLwmXZRo",
                     authDomain: "click-the-bart.firebaseapp.com",
@@ -180,17 +224,25 @@
                         dbConnected = true;
                         if (unsubscribePersonal) unsubscribePersonal();
                         if (unsubscribeGlobal) unsubscribeGlobal();
+                        if (unsubscribeChat) unsubscribeChat();
                         setupFirestoreListeners(); 
                     } else {
                         console.log("User is not signed in. Attempting to sign in anonymously.");
+                        dbConnected = false;
                         signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
                     }
                 });
 
             } catch (error) {
                 console.error("Critical Firebase initialization error:", error);
-                // Don't show an error to the user, just log it.
             }
+        }
+        
+        // --- Helper function to escape HTML ---
+        function sanitizeHTML(str) {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
         }
 
         // Sets up the real-time data listeners
@@ -198,62 +250,62 @@
             try {
                 const appId = "click-the-bart";
 
-                // --- CORRECTED PATHS ---
+                // Score Listeners
                 scoreDocRef = doc(db, 'artifacts', appId, 'users', userId);
                 globalScoreDocRef = doc(db, 'artifacts', appId, 'public', 'globalData');
                 
                 unsubscribePersonal = onSnapshot(scoreDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        localScore = docSnap.data().count || 0;
-                    } else {
-                        localScore = 0;
-                        setDoc(scoreDocRef, { count: 0 }); // Create the document if it doesn't exist
-                    }
+                    localScore = (docSnap.exists() ? docSnap.data().count : 0) || 0;
                     scoreCounter.textContent = `Your Clicks: ${localScore}`;
-                }, (error) => {
-                    console.error("Personal score listener failed:", error);
-                    // If it fails, the score just remains what it was locally. No error text.
-                });
+                }, (error) => console.error("Personal score listener error:", error));
 
                 unsubscribeGlobal = onSnapshot(globalScoreDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        globalHighScore = docSnap.data().topScore || 0;
-                    } else {
-                        globalHighScore = 0;
-                        setDoc(globalScoreDocRef, { topScore: 0 }); // Create the document if it doesn't exist
-                    }
+                    globalHighScore = (docSnap.exists() ? docSnap.data().topScore : 0) || 0;
                     globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
-                }, (error) => {
-                    console.error("Global score listener failed:", error);
-                    // If it fails, the top score just remains what it was. No error text.
-                });
+                }, (error) => console.error("Global score listener error:", error));
+
+                // Chat Listener
+                const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+                unsubscribeChat = onSnapshot(chatCollectionRef, (snapshot) => {
+                    const messages = [];
+                    snapshot.forEach(doc => {
+                        messages.push(doc.data());
+                    });
+                    messages.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                    
+                    chatMessages.innerHTML = '';
+                    messages.forEach(msg => {
+                        const username = sanitizeHTML(msg.username || 'anonymous');
+                        const text = sanitizeHTML(msg.text || '');
+                        
+                        const msgEl = document.createElement('div');
+                        msgEl.innerHTML = `<span class="font-bold text-gray-700">${username}:</span> <span class="text-gray-900">${text}</span>`;
+                        chatMessages.appendChild(msgEl);
+                    });
+                    if (messages.length > 0) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }, (error) => console.error("Chat listener error:", error));
+                
+                // Initial cleanup of old messages
+                deleteOldMessages();
 
             } catch (error) {
                 console.error("Firestore listener setup failed:", error);
-                 // Don't show an error to the user, just log it.
             }
         }
 
         // --- Anti-Autoclicker Functions ---
         function checkForBot() {
             if (clickTimestamps.length < ANTI_CLICKER_THRESHOLD) return false;
-            
             const recentIntervals = [];
             for (let i = clickTimestamps.length - 1; i > clickTimestamps.length - ANTI_CLICKER_THRESHOLD; i--) {
                 recentIntervals.push(clickTimestamps[i] - clickTimestamps[i - 1]);
             }
-            
             const minInterval = Math.min(...recentIntervals);
             const maxInterval = Math.max(...recentIntervals);
             const jitter = maxInterval - minInterval;
-
-            console.log(`Click interval jitter: ${jitter}ms`);
-
-            // If the difference between the fastest and slowest click is too small, it's a bot.
-            if (jitter < MAX_JITTER_MS) {
-                return true; 
-            }
-            
+            if (jitter < MAX_JITTER_MS) return true; 
             return false;
         }
 
@@ -264,13 +316,80 @@
             unhappinessMessage.style.opacity = 1;
             setTimeout(() => { unhappinessMessage.style.opacity = 0; }, 2500);
             clickTimestamps.length = 0;
-            if (dbConnected && scoreDocRef) {
-                await setDoc(scoreDocRef, { count: 0 });
+            if (dbConnected && scoreDocRef) await setDoc(scoreDocRef, { count: 0 });
+        }
+        
+        // --- Chat Functions ---
+        async function deleteOldMessages() {
+            if (!dbConnected) return;
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            const appId = "click-the-bart";
+            const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+            
+            try {
+                const snapshot = await getDocs(chatCollectionRef);
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const timestamp = data.timestamp?.toDate();
+                    if (timestamp && timestamp < fiveMinutesAgo) {
+                        console.log(`Deleting old message: ${doc.id}`);
+                        deletePromises.push(deleteDoc(doc.ref));
+                    }
+                });
+                if (deletePromises.length > 0) {
+                    await Promise.all(deletePromises);
+                    console.log(`${deletePromises.length} old messages deleted.`);
+                }
+            } catch (error) {
+                console.error("Error deleting old messages:", error);
             }
         }
 
+        async function sendMessage() {
+            if (sendButton.disabled) return;
+            const text = chatInput.value.trim();
+
+            if (!text) return;
+
+            if (!dbConnected) {
+                console.warn("Database not connected. Cannot send message.");
+                const originalText = sendButton.textContent;
+                sendButton.textContent = "Offline";
+                setTimeout(() => { sendButton.textContent = originalText; }, 2000);
+                return;
+            }
+
+            const originalButtonText = sendButton.textContent;
+            sendButton.disabled = true;
+            sendButton.textContent = '...';
+
+            const appId = "click-the-bart";
+            const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+            try {
+                await addDoc(chatCollectionRef, {
+                    username: 'anonymous',
+                    text: text,
+                    timestamp: serverTimestamp(),
+                    userId: userId
+                });
+                chatInput.value = '';
+                deleteOldMessages(); 
+            } catch (error) {
+                console.error("Error sending message:", error);
+                sendButton.textContent = 'Failed';
+                setTimeout(() => {
+                    sendButton.disabled = false;
+                    sendButton.textContent = originalButtonText;
+                }, 2000);
+                return;
+            }
+
+            sendButton.disabled = false;
+            sendButton.textContent = originalButtonText;
+        }
+
         // --- Event Listeners ---
-        // **FIXED:** Added a safeguard to ensure the button is enabled.
         if (startButton) {
             startButton.disabled = false; 
             startButton.addEventListener('click', () => {
@@ -282,74 +401,62 @@
                     gameContent.classList.add('animate-fade-in');
                     topScoreContainer.classList.remove('hidden');
                     topScoreContainer.classList.add('animate-fade-in');
+                    chatPopupContainer.classList.remove('hidden'); // Show chat popup
+                    chatPopupContainer.classList.add('animate-fade-in');
+                    
+                    const bartImage = document.getElementById('bartImage');
+                    if (bartImage) addBartClickListener(bartImage);
+
                 }, 800);
             });
         }
 
-
-        bartImage.addEventListener('click', async () => {
-            // General lock to prevent spamming while an action is in progress.
-            if (isClickLocked) return;
-
-            const currentTime = Date.now();
-
-            // --- Log the click interval ---
-            if (lastClickTime > 0) {
-                const interval = currentTime - lastClickTime;
-                console.log(`Time since last click: ${interval}ms`);
-            }
-
-            // --- Anti-Autoclicker Logic runs on EVERY click ---
-            clickTimestamps.push(currentTime);
-            if (clickTimestamps.length > 20) clickTimestamps.shift();
-
-            if (checkForBot()) {
-                await triggerUnhappiness();
-                return; // Exit completely if cheating is detected
-            }
-
-            // --- Rate Limit Check ---
-            // This runs AFTER the anti-cheat check.
-            if (currentTime - lastClickTime < MIN_CLICK_DELAY) {
-                return; // Exit without increasing score if clicking too fast
-            }
-
-            // --- If all checks pass, proceed with a valid click ---
-            isClickLocked = true; // Lock clicks until sound/animation is done
-            lastClickTime = currentTime;
-
-            clickSound.currentTime = 0;
-            clickSound.play().catch(e => console.error("Audio play failed:", e));
-
-            bartImage.classList.add('clicked');
-            setTimeout(() => bartImage.classList.remove('clicked'), 300);
-
-            localScore++;
-            scoreCounter.textContent = `Your Clicks: ${localScore}`;
-
-            // --- 100-point milestone logic ---
-            if (localScore > 0 && localScore % 100 === 0) {
-                bartWrapper.classList.add('do-flip');
-                setTimeout(() => {
-                    bartWrapper.classList.remove('do-flip');
-                }, 800);
-                // **FIXED:** Use an event listener to unlock clicks only when the sound finishes.
-                clickSound.addEventListener('ended', () => {
-                    isClickLocked = false;
-                }, { once: true }); // { once: true } makes the listener self-destruct after one use.
-            } else {
-                // For normal clicks, unlock after a short, fixed delay.
-                setTimeout(() => {
-                    isClickLocked = false;
-                }, 300);
-            }
-            
-            // --- Database Update ---
-            if (dbConnected && scoreDocRef) {
-                setDoc(scoreDocRef, { count: localScore }, { merge: true });
-                if (localScore > globalHighScore) {
-                    setDoc(globalScoreDocRef, { topScore: localScore });
+        function addBartClickListener(element) {
+            element.addEventListener('click', async () => {
+                if (isClickLocked) return;
+                const currentTime = Date.now();
+                if (lastClickTime > 0) console.log(`Time since last click: ${currentTime - lastClickTime}ms`);
+                clickTimestamps.push(currentTime);
+                if (clickTimestamps.length > 20) clickTimestamps.shift();
+                if (checkForBot()) {
+                    await triggerUnhappiness();
+                    return;
                 }
+                if (currentTime - lastClickTime < MIN_CLICK_DELAY) return;
+                isClickLocked = true;
+                lastClickTime = currentTime;
+                clickSound.currentTime = 0;
+                clickSound.play().catch(e => console.error("Audio play failed:", e));
+                const bartImage = document.getElementById('bartImage');
+                if (bartImage && bartImage.tagName === 'IMG') {
+                    bartImage.classList.add('clicked');
+                    setTimeout(() => bartImage.classList.remove('clicked'), 300);
+                }
+                localScore++;
+                scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                if (localScore > 0 && localScore % 100 === 0) {
+                    bartWrapper.classList.add('do-flip');
+                    setTimeout(() => bartWrapper.classList.remove('do-flip'), 800);
+                    clickSound.addEventListener('ended', () => { isClickLocked = false; }, { once: true });
+                } else {
+                    setTimeout(() => { isClickLocked = false; }, 300);
+                }
+                if (dbConnected && scoreDocRef && globalScoreDocRef) {
+                    setDoc(scoreDocRef, { count: localScore }, { merge: true });
+                    if (localScore > globalHighScore) {
+                        globalHighScore = localScore;
+                        globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                        setDoc(globalScoreDocRef, { topScore: localScore });
+                    }
+                }
+            });
+        }
+        
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
+                sendMessage();
             }
         });
 
