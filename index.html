@@ -12,11 +12,14 @@
 
     <title>click the bart</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Prevent scrollbars during animations */
-            background-color: #fff; /* Pure white background */
+            overflow: hidden;
+            background-color: #fff;
             transition: background-color 0.5s;
         }
 
@@ -46,7 +49,7 @@
             100% { transform: rotate(-8deg); }
         }
         .swaying-text {
-            display: inline-block; /* Required for transform to work correctly */
+            display: inline-block;
             transform-origin: top center;
             animation: seesaw 4s infinite ease-in-out;
         }
@@ -58,27 +61,31 @@
         }
         
         @keyframes fly-up-out {
-            from {
-                transform: translateY(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-100%); opacity: 0; }
         }
 
-        .animate-fade-in {
-            animation: fade-in 0.5s forwards;
-        }
-        .animate-fly-up {
-            animation: fly-up-out 0.8s forwards ease-in;
-        }
+        .animate-fade-in { animation: fade-in 0.5s forwards; }
+        .animate-fly-up { animation: fly-up-out 0.8s forwards ease-in; }
 
+        /* --- Unhappiness Message --- */
+        #unhappiness-message {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: opacity 0.5s ease-out;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-white flex items-center justify-center min-h-screen p-4">
     
+    <!-- Unhappiness Message -->
+    <div id="unhappiness-message" class="text-3xl font-bold text-red-600 opacity-0 pointer-events-none">
+        Bart is unhappy &gt;:(
+    </div>
+
     <!-- Title Screen -->
     <div id="titleScreen" class="flex flex-col items-center justify-center text-center">
         <img src="https://www.errorrail.dev/database/Untitled.png" 
@@ -92,30 +99,28 @@
 
     <!-- Main Game Content (Initially Hidden) -->
     <div id="gameContent" class="hidden opacity-0 text-center">
-        <!-- Wrapper for the Bart image to handle the flip separately from the click -->
         <div id="bartWrapper" style="display: inline-block;">
             <img id="bartImage" 
                  src="https://www.errorrail.dev/database/bartsimpson.png" 
                  alt="bart simpson"
                  class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
-                 onerror="this.onerror=null;this.src='https://placehold.co/512x512/facc15/000000?text=Bart';">
+                 onerror="this.onerror=null;this.src='https://placehold.co/256x256/facc15/000000?text=Bart';">
         </div>
         <div class="mt-6 space-y-2">
-             <!-- Personal score is now the only thing centered below Bart -->
              <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Loading score...</p>
         </div>
     </div>
     
-    <!-- NEW: Top score element positioned in the corner -->
+    <!-- Top score element positioned in the corner -->
     <div id="topScoreContainer" class="hidden fixed top-4 right-4 z-10 bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg">
         <p id="globalHighScore" class="text-lg font-medium">Top Score: Loading...</p>
     </div>
-         
+        
     <script type="module">
         // --- Firebase SDK Imports ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- DOM Element Selection ---
         const titleScreen = document.getElementById('titleScreen');
@@ -125,7 +130,8 @@
         const bartWrapper = document.getElementById('bartWrapper');
         const scoreCounter = document.getElementById('scoreCounter');
         const globalHighScoreEl = document.getElementById('globalHighScore');
-        const topScoreContainer = document.getElementById('topScoreContainer'); // New container element
+        const topScoreContainer = document.getElementById('topScoreContainer');
+        const unhappinessMessage = document.getElementById('unhappiness-message');
 
         // --- Audio Setup ---
         const clickSound = new Audio('https://www.errorrail.dev/database/clickthebart.mp3');
@@ -139,59 +145,112 @@
         
         // --- Anti-Autoclicker Variables ---
         let lastClickTime = 0;
-        const MIN_CLICK_DELAY = 220;
-
-        // --- Your Personal Firebase Configuration ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAsbxHc5MiEIKekQyJcHQ1qjE_xLwmXZRo",
-            authDomain: "click-the-bart.firebaseapp.com",
-            databaseURL: "https://click-the-bart-default-rtdb.firebaseio.com",
-            projectId: "click-the-bart",
-            storageBucket: "click-the-bart.appspot.com",
-            messagingSenderId: "825674005149",
-            appId: "1:825674005149:web:de6f0440fe270c1f33b274",
-            measurementId: "G-V7XHJRG2RX"
-        };
+        const MIN_CLICK_DELAY = 50; // Minimum delay between clicks in ms
+        const clickTimestamps = [];
+        const ANTI_CLICKER_THRESHOLD = 6; // Number of identical intervals to trigger
 
         // --- Firebase Initialization and Setup ---
         async function initFirebase() {
             try {
+                console.log("Initializing Firebase...");
+                const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                
+                if (firebaseConfigString === '{}' || !firebaseConfigString) {
+                    console.error("Firebase config is not available or empty.");
+                    throw new Error("Firebase config not found.");
+                }
+                
+                const firebaseConfig = JSON.parse(firebaseConfigString);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bart-clicker';
+                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                console.log("Firebase app initialized. Signing in...");
 
-                await signInAnonymously(auth);
+                // Sign in the user
+                const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (authToken) {
+                    await signInWithCustomToken(auth, authToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                if (!auth.currentUser) {
+                    throw new Error("Firebase authentication failed. User is not signed in.");
+                }
                 
                 userId = auth.currentUser.uid;
-                scoreDocRef = doc(db, `userScores/bart-clicker/${userId}`, 'scoreData');
-                globalScoreDocRef = doc(db, 'globalScores', 'bart-clicker-high-score');
+                console.log("User signed in with UID:", userId);
+                
+                // Define document paths using the app ID for proper data separation
+                scoreDocRef = doc(db, `artifacts/${appId}/users/${userId}`, 'scoreData');
+                globalScoreDocRef = doc(db, `artifacts/${appId}/public/data`, 'globalHighScore');
+                console.log("Document paths defined. Setting up listeners...");
 
                 // Listener for the user's personal score
-                onSnapshot(scoreDocRef, (doc) => {
-                    if (doc.exists()) {
-                        localScore = doc.data().count || 0;
-                        scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                onSnapshot(scoreDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        localScore = docSnap.data().count || 0;
                     } else {
-                        setDoc(scoreDocRef, { count: 0 });
-                        scoreCounter.textContent = 'Your Clicks: 0';
+                        localScore = 0;
+                        setDoc(scoreDocRef, { count: 0 }); // Initialize score if it doesn't exist
                     }
+                    scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                }, (error) => {
+                    console.error("Error on personal score listener:", error);
+                    scoreCounter.textContent = "Error listening to score.";
                 });
 
                 // Listener for the global high score
-                onSnapshot(globalScoreDocRef, (doc) => {
-                    if (doc.exists()) {
-                        globalHighScore = doc.data().topScore || 0;
-                        globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                onSnapshot(globalScoreDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        globalHighScore = docSnap.data().topScore || 0;
                     } else {
-                        setDoc(globalScoreDocRef, { topScore: 0 });
-                        globalHighScoreEl.textContent = 'Top Score: 0';
+                        globalHighScore = 0;
+                        setDoc(globalScoreDocRef, { topScore: 0 }); // Initialize global score
                     }
+                    globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                }, (error) => {
+                    console.error("Error on global high score listener:", error);
+                    globalHighScoreEl.textContent = "Top Score: Error";
                 });
+                
+                console.log("Firebase setup complete.");
 
             } catch (error) {
-                console.error("Firebase initialization failed:", error);
+                console.error("A critical error occurred during Firebase setup:", error);
                 scoreCounter.textContent = "Error loading score.";
+                globalHighScoreEl.textContent = "Top Score: Error";
             }
+        }
+
+        // --- Anti-Autoclicker Functions ---
+        function checkForPerfectIntervals() {
+            if (clickTimestamps.length < ANTI_CLICKER_THRESHOLD) {
+                return false;
+            }
+            const recentIntervals = [];
+            for (let i = clickTimestamps.length - 1; i > clickTimestamps.length - ANTI_CLICKER_THRESHOLD; i--) {
+                const interval = clickTimestamps[i] - clickTimestamps[i - 1];
+                recentIntervals.push(interval);
+            }
+            const firstInterval = recentIntervals[0];
+            if (firstInterval > 10 && recentIntervals.every(interval => interval === firstInterval)) {
+                return true; 
+            }
+            return false;
+        }
+
+        async function triggerUnhappiness() {
+            console.warn("Autoclicker detected! Resetting score.");
+            localScore = 0;
+            await setDoc(scoreDocRef, { count: 0 });
+            clickTimestamps.length = 0;
+            unhappinessMessage.style.opacity = 1;
+            setTimeout(() => {
+                unhappinessMessage.style.opacity = 0;
+            }, 2500);
         }
 
         // --- Event Listeners ---
@@ -204,7 +263,6 @@
                 gameContent.classList.remove('hidden');
                 gameContent.classList.add('animate-fade-in');
                 
-                // Also fade in the top score container
                 topScoreContainer.classList.remove('hidden');
                 topScoreContainer.classList.add('animate-fade-in');
             }, 800);
@@ -212,13 +270,25 @@
 
         bartImage.addEventListener('click', async () => {
             const currentTime = Date.now();
+
             if (isClickLocked || (currentTime - lastClickTime < MIN_CLICK_DELAY)) {
                 return;
             }
+            
+            clickTimestamps.push(currentTime);
+            if (clickTimestamps.length > 20) {
+                clickTimestamps.shift();
+            }
+
+            if (checkForPerfectIntervals()) {
+                await triggerUnhappiness();
+                return;
+            }
+            
             lastClickTime = currentTime;
 
             clickSound.currentTime = 0;
-            clickSound.play();
+            clickSound.play().catch(e => console.error("Audio play failed:", e));
 
             bartImage.classList.add('clicked');
             setTimeout(() => bartImage.classList.remove('clicked'), 300);
@@ -230,22 +300,18 @@
                 bartWrapper.classList.add('do-flip');
                 setTimeout(() => {
                     bartWrapper.classList.remove('do-flip');
+                    isClickLocked = false;
                 }, 800);
             }
 
-            // Update the user's personal score
             await setDoc(scoreDocRef, { count: newScore }, { merge: true });
 
-            // Check if the new score is a global high score
             if (newScore > globalHighScore) {
                 await setDoc(globalScoreDocRef, { topScore: newScore });
             }
         });
 
-        clickSound.addEventListener('ended', () => {
-            isClickLocked = false;
-        });
-
+        // Initialize Firebase on load
         initFirebase();
     </script>
 </body>
