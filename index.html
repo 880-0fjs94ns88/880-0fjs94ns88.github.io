@@ -117,6 +117,8 @@
     </div>
         
     <script type="module">
+        console.log("Game script starting..."); // Debug log to confirm script execution.
+
         // --- Firebase SDK Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -207,7 +209,7 @@
                         localScore = 0;
                         setDoc(scoreDocRef, { count: 0 }); // Create the document if it doesn't exist
                     }
-                    scoreCounter.textContent = `clicks: ${localScore}`;
+                    scoreCounter.textContent = `Your Clicks: ${localScore}`;
                 }, (error) => {
                     console.error("Personal score listener failed:", error);
                     // If it fails, the score just remains what it was locally. No error text.
@@ -258,7 +260,7 @@
         async function triggerUnhappiness() {
             console.warn("Autoclicker detected! Resetting score.");
             localScore = 0;
-            scoreCounter.textContent = clicks: ${localScore}`;
+            scoreCounter.textContent = `Your Clicks: ${localScore}`;
             unhappinessMessage.style.opacity = 1;
             setTimeout(() => { unhappinessMessage.style.opacity = 0; }, 2500);
             clickTimestamps.length = 0;
@@ -268,17 +270,22 @@
         }
 
         // --- Event Listeners ---
-        startButton.addEventListener('click', () => {
-            startButton.disabled = true; 
-            titleScreen.classList.add('animate-fly-up');
-            setTimeout(() => {
-                titleScreen.style.display = 'none';
-                gameContent.classList.remove('hidden');
-                gameContent.classList.add('animate-fade-in');
-                topScoreContainer.classList.remove('hidden');
-                topScoreContainer.classList.add('animate-fade-in');
-            }, 800);
-        });
+        // **FIXED:** Added a safeguard to ensure the button is enabled.
+        if (startButton) {
+            startButton.disabled = false; 
+            startButton.addEventListener('click', () => {
+                startButton.disabled = true; 
+                titleScreen.classList.add('animate-fly-up');
+                setTimeout(() => {
+                    titleScreen.style.display = 'none';
+                    gameContent.classList.remove('hidden');
+                    gameContent.classList.add('animate-fade-in');
+                    topScoreContainer.classList.remove('hidden');
+                    topScoreContainer.classList.add('animate-fade-in');
+                }, 800);
+            });
+        }
+
 
         bartImage.addEventListener('click', async () => {
             // General lock to prevent spamming while an action is in progress.
