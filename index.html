@@ -83,7 +83,7 @@
     
     <!-- Unhappiness Message -->
     <div id="unhappiness-message" class="text-3xl font-bold text-red-600 opacity-0 pointer-events-none">
-        bart is unhappy with your use of an auto clicker &gt;:(
+        Bart is unhappy &gt;:(
     </div>
 
     <!-- Title Screen -->
@@ -92,8 +92,8 @@
              alt="Click The Bart Title" 
              class="w-full max-w-md mb-8"
              onerror="this.onerror=null;this.src='https://placehold.co/600x200/fef08a/000000?text=Click+The+Bart';">
-        <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow" disabled>
-            Connecting...
+        <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow">
+            Play
         </button>
     </div>
 
@@ -119,8 +119,8 @@
     <script type="module">
         // --- Firebase SDK Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, enableNetwork } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- DOM Element Selection ---
         const titleScreen = document.getElementById('titleScreen');
@@ -143,6 +143,7 @@
         let globalHighScore = 0;
         let isClickLocked = false; 
         let dbConnected = false;
+        let unsubscribePersonal, unsubscribeGlobal; // To detach listeners
         
         // --- Anti-Autoclicker Variables ---
         let lastClickTime = 0;
@@ -151,91 +152,75 @@
         const ANTI_CLICKER_THRESHOLD = 6;
 
         // --- Firebase Initialization and Setup ---
-        async function initFirebase() {
+        function initializeFirebase() {
             try {
-                const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-                if (firebaseConfigString === '{}' || !firebaseConfigString) throw new Error("Firebase config not found.");
+                // Hardcoded Firebase configuration for deployment.
+                // This is the key fix for the "Firebase config not found" error on your live site.
+                const firebaseConfig = {
+                    apiKey: "AIzaSyAsbxHc5MiEIKekQyJcHQ1qjE_xLwmXZRo",
+                    authDomain: "click-the-bart.firebaseapp.com",
+                    databaseURL: "https://click-the-bart-default-rtdb.firebaseio.com",
+                    projectId: "click-the-bart",
+                    storageBucket: "click-the-bart.appspot.com",
+                    messagingSenderId: "825674005149",
+                    appId: "1:825674005149:web:de6f0440fe270c1f33b274",
+                    measurementId: "G-V7XHJRG2RX"
+                };
                 
-                const firebaseConfig = JSON.parse(firebaseConfigString);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                await enableNetwork(db); // Explicitly enable network
 
-                const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (authToken) {
-                    await signInWithCustomToken(auth, authToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                if (!auth.currentUser || !auth.currentUser.uid) throw new Error("Firebase authentication failed.");
-                userId = auth.currentUser.uid;
-                
-                console.log("Firebase auth successful. User UID:", userId);
-                return true;
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User is signed in with UID:", userId);
+                        dbConnected = true;
+                        if (unsubscribePersonal) unsubscribePersonal();
+                        if (unsubscribeGlobal) unsubscribeGlobal();
+                        setupFirestoreListeners();
+                    } else {
+                        console.log("User is not signed in. Attempting to sign in anonymously.");
+                        signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
+                    }
+                });
 
             } catch (error) {
-                console.error("Critical Firebase auth error:", error);
-                return false;
+                console.error("Critical Firebase initialization error:", error);
+                scoreCounter.textContent = "Offline Mode";
+                globalHighScoreEl.textContent = "Top Score: Offline";
             }
         }
 
-        // Sets up the real-time data listeners with a retry mechanism
-        function setupFirestoreListeners(retryCount = 0) {
-            const maxRetries = 3;
+        // Sets up the real-time data listeners
+        function setupFirestoreListeners() {
             try {
-                if (retryCount > 0) console.log(`Retrying Firestore connection, attempt ${retryCount}...`);
-
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bart-clicker';
-                if (!appId) throw new Error("App ID is missing.");
+                // The app ID for the database path.
+                const appId = 'default-bart-clicker';
 
                 scoreDocRef = doc(db, `artifacts/${appId}/users/${userId}`, 'scoreData');
                 globalScoreDocRef = doc(db, `artifacts/${appId}/public/data`, 'globalHighScore');
                 
-                // Listener for personal score
-                onSnapshot(scoreDocRef, (docSnap) => {
-                    dbConnected = true;
-                    if (docSnap.exists()) {
-                        localScore = docSnap.data().count || 0;
-                    } else {
-                        localScore = 0;
-                        setDoc(scoreDocRef, { count: 0 });
-                    }
+                unsubscribePersonal = onSnapshot(scoreDocRef, (docSnap) => {
+                    localScore = docSnap.exists() ? docSnap.data().count || 0 : 0;
                     scoreCounter.textContent = `Your Clicks: ${localScore}`;
                 }, (error) => {
-                    console.error(`Personal score listener failed (attempt ${retryCount}):`, error);
-                    if (retryCount < maxRetries) {
-                        setTimeout(() => setupFirestoreListeners(retryCount + 1), 3000);
-                    } else {
-                        scoreCounter.textContent = "Score Offline";
-                    }
+                    console.error("Personal score listener failed:", error);
+                    scoreCounter.textContent = "Score Offline";
                 });
 
-                // Listener for global score
-                onSnapshot(globalScoreDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        globalHighScore = docSnap.data().topScore || 0;
-                    } else {
-                        globalHighScore = 0;
-                        setDoc(globalScoreDocRef, { topScore: 0 });
-                    }
+                unsubscribeGlobal = onSnapshot(globalScoreDocRef, (docSnap) => {
+                    globalHighScore = docSnap.exists() ? docSnap.data().topScore || 0 : 0;
                     globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
                 }, (error) => {
-                    console.error(`Global score listener failed (attempt ${retryCount}):`, error);
-                    if (retryCount >= maxRetries) {
-                         globalHighScoreEl.textContent = "Top Score: Offline";
-                    }
+                    console.error("Global score listener failed:", error);
+                    globalHighScoreEl.textContent = "Top Score: Offline";
                 });
 
             } catch (error) {
-                console.error(`Firestore listener setup failed (attempt ${retryCount}):`, error);
-                 if (retryCount < maxRetries) {
-                    setTimeout(() => setupFirestoreListeners(retryCount + 1), 3000);
-                } else {
-                    scoreCounter.textContent = "Score Offline";
-                    globalHighScoreEl.textContent = "Top Score: Offline";
-                }
+                console.error("Firestore listener setup failed:", error);
+                scoreCounter.textContent = "Score Offline";
+                globalHighScoreEl.textContent = "Top Score: Offline";
             }
         }
 
@@ -253,7 +238,7 @@
         async function triggerUnhappiness() {
             console.warn("Autoclicker detected! Resetting score.");
             localScore = 0;
-            scoreCounter.textContent = `Your Clicks: ${localScore}`; // Update UI immediately
+            scoreCounter.textContent = `Your Clicks: ${localScore}`;
             unhappinessMessage.style.opacity = 1;
             setTimeout(() => { unhappinessMessage.style.opacity = 0; }, 2500);
             clickTimestamps.length = 0;
@@ -306,7 +291,7 @@
                 }, 800);
             }
 
-            if (dbConnected) {
+            if (dbConnected && scoreDocRef) {
                 setDoc(scoreDocRef, { count: localScore }, { merge: true });
                 if (localScore > globalHighScore) {
                     setDoc(globalScoreDocRef, { topScore: localScore });
@@ -315,21 +300,8 @@
         });
 
         // --- Initialize Game on Load ---
-        async function initializeGame() {
-            const authReady = await initFirebase();
-            if (authReady) {
-                startButton.textContent = 'play';
-                startButton.disabled = false;
-                setupFirestoreListeners(); // Connect to DB in the background
-            } else {
-                startButton.textContent = 'Auth Error: Reload';
-                startButton.disabled = true;
-                scoreCounter.textContent = "Offline Mode";
-                globalHighScoreEl.textContent = "Top Score: Offline";
-            }
-        }
+        initializeFirebase();
 
-        initializeGame();
     </script>
 </body>
 </html>
