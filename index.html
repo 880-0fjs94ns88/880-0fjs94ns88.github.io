@@ -1,3 +1,516 @@
-<p>click the bart is being paused for ~5 hours cus im gonna go over my free server limit</p>
-<br>
-<p>sorry :/</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Discord Embed Meta Tags -->
+    <meta property="og:title" content="Click The Bart Game">
+    <meta property="og:description" content="A fun, simple game with a persistent score! Click Bart to hear a sound!">
+    <meta property="og:image" content="https://www.errorrail.dev/database/Untitled.png">
+    <meta name="theme-color" content="#facc15">
+
+    <title>click the bart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        /* --- Click Animation for Bart --- */
+        @keyframes click-effect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .clicked {
+            animation: click-effect 0.3s ease-in-out;
+        }
+
+        /* --- One-time backflip animation --- */
+        @keyframes backflip {
+            from { transform: rotateX(0deg); }
+            to { transform: rotateX(360deg); }
+        }
+        .do-flip {
+            animation: backflip 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- Swaying Animation for Score Text --- */
+        @keyframes seesaw {
+            0% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+            100% { transform: rotate(-8deg); }
+        }
+        .swaying-text {
+            display: inline-block;
+            transform-origin: top center;
+            animation: seesaw 4s infinite ease-in-out;
+        }
+
+        /* --- Transition Animations --- */
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fly-up-out {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-100%); opacity: 0; }
+        }
+
+        .animate-fade-in { animation: fade-in 0.5s forwards; }
+        .animate-fly-up { animation: fly-up-out 0.8s forwards ease-in; }
+        
+        /* --- Chat Styles --- */
+        #chat-popup-container {
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        #chat-popup-container:hover {
+            height: 400px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        #chat-popup-label {
+            transition: opacity 0.2s ease-in-out;
+        }
+        #chat-popup-container:hover #chat-popup-label {
+            opacity: 0;
+        }
+        #chat-content {
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        #chat-popup-container:hover #chat-content {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #chat-messages {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    
+    <!-- UI Overlay for corner elements -->
+    <div id="ui-overlay" class="fixed inset-0 pointer-events-none z-40">
+        <!-- Top Right UI Container -->
+        <div class="hidden absolute top-4 right-4 flex items-center space-x-2 pointer-events-auto" id="top-right-ui">
+            <!-- Top score element -->
+            <div id="topScoreContainer" class="bg-black bg-opacity-70 text-white py-2 px-3 rounded-lg shadow-lg">
+                <p id="globalHighScore" class="text-lg font-medium">Top Score: 0</p>
+            </div>
+            <!-- Settings Button -->
+            <button id="settings-button" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+
+
+        <!-- Pop-up Chat Bar -->
+        <div id="chat-popup-container" class="hidden absolute bottom-4 right-4 w-80 h-12 bg-gray-800 text-white rounded-t-lg cursor-pointer pointer-events-auto">
+            <div id="chat-popup-label" class="w-full h-full flex items-center justify-center font-bold">
+                Live Chat
+            </div>
+            <div id="chat-content" class="absolute bottom-0 left-0 w-full h-[400px] bg-gray-100 flex flex-col">
+                <div class="bg-gray-800 text-white p-2 text-center font-bold">Live Chat</div>
+                <div id="chat-messages" class="flex-grow overflow-y-scroll p-3 bg-white border-t border-b border-gray-300">
+                    <!-- Messages will appear here -->
+                </div>
+                <div class="p-2 bg-gray-200 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Say something..." class="flex-grow border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-black">
+                    <button id="send-button" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main content wrapper for centering -->
+    <main class="flex flex-col items-center justify-center min-h-screen p-4">
+        <!-- Title Screen -->
+        <div id="titleScreen" class="flex flex-col items-center justify-center text-center">
+            <img src="https://www.errorrail.dev/database/Untitled.png" 
+                 alt="Click The Bart Title" 
+                 class="w-full max-w-md mb-8"
+                 onerror="this.outerHTML = `<div class='w-full max-w-md mb-8 flex items-center justify-center h-24 bg-red-100 text-red-700 rounded-lg border border-red-300'>Image couldn't load</div>`">
+            <button id="startButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 border border-gray-400 rounded-lg shadow">
+                Play
+            </button>
+        </div>
+
+        <!-- Main Game Content (Initially Hidden) -->
+        <div id="gameContent" class="hidden opacity-0 text-center">
+            <div id="bartWrapper" style="display: inline-block;">
+                <img id="bartImage" 
+                     src="https://www.errorrail.dev/database/bartsimpson.png" 
+                     alt="bart simpson"
+                     class="cursor-pointer rounded-lg w-48 md:w-64 h-auto"
+                     onerror="this.outerHTML = `<div id='bartImage' class='cursor-pointer rounded-lg w-48 md:w-64 h-64 flex items-center justify-center bg-red-100 text-red-700 rounded-lg border border-red-300'><p class='text-center'>Image couldn't load</p></div>`">
+            </div>
+            <div class="mt-6 space-y-2">
+                 <p id="scoreCounter" class="swaying-text text-2xl font-bold text-gray-700">Your Clicks: 0</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pointer-events-auto">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Settings</h2>
+                <button id="close-settings-button" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="username-input" class="block text-sm font-medium text-gray-700">Chat Username</label>
+                    <input type="text" id="username-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500" placeholder="anonymous">
+                </div>
+                <div>
+                    <label for="sound-upload" class="block text-sm font-medium text-gray-700">Custom Click Sound (.mp3)</label>
+                    <input type="file" id="sound-upload" accept=".mp3" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
+                </div>
+            </div>
+        </div>
+    </div>
+        
+    <script type="module">
+        console.log("Game script starting..."); // Debug log to confirm script execution.
+
+        // --- Firebase SDK Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, orderBy, limit, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM Element Selection ---
+        const titleScreen = document.getElementById('titleScreen');
+        const startButton = document.getElementById('startButton');
+        const gameContent = document.getElementById('gameContent');
+        const bartWrapper = document.getElementById('bartWrapper');
+        const scoreCounter = document.getElementById('scoreCounter');
+        const globalHighScoreEl = document.getElementById('globalHighScore');
+        const topRightUI = document.getElementById('top-right-ui');
+        const unhappinessMessage = document.getElementById('unhappiness-message');
+        const chatPopupContainer = document.getElementById('chat-popup-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const settingsButton = document.getElementById('settings-button');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsButton = document.getElementById('close-settings-button');
+        const usernameInput = document.getElementById('username-input');
+        const soundUpload = document.getElementById('sound-upload');
+
+        // --- Audio Setup ---
+        let clickSound = new Audio('https://www.errorrail.dev/database/clickthebart.mp3');
+        clickSound.preload = 'auto';
+
+        // --- Game Logic Variables ---
+        let db, auth, userId, scoreDocRef, globalScoreDocRef;
+        let localScore = 0;
+        let globalHighScore = 0;
+        let isClickLocked = false; 
+        let dbConnected = false;
+        let unsubscribePersonal, unsubscribeGlobal, unsubscribeChat;
+        let chatUsername = 'anonymous';
+        let isChatListenerActive = false;
+        let cachedMessages = []; // For storing chat messages locally
+        
+        // --- Rate Limiting Variable ---
+        let lastClickTime = 0;
+        const MIN_CLICK_DELAY = 100; // Allows ~10 clicks per second
+
+        // --- Load Settings from localStorage ---
+        function loadSettings() {
+            const savedUsername = localStorage.getItem('bartClickerUsername');
+            if (savedUsername) {
+                chatUsername = savedUsername;
+                usernameInput.value = savedUsername;
+            }
+        }
+
+        // --- Firebase Initialization and Setup ---
+        function initializeFirebase() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyB3itOzpds3t_K_1rnfyz07_UN5vt1qFq0",
+                    authDomain: "click-the-bart-5a75c.firebaseapp.com",
+                    projectId: "click-the-bart-5a75c",
+                    storageBucket: "click-the-bart-5a75c.appspot.com",
+                    messagingSenderId: "374401830794",
+                    appId: "1:374401830794:web:b4d54b285290c9a53f8273",
+                    measurementId: "G-WZVT8WBN9Q"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User is signed in with UID:", userId);
+                        dbConnected = true;
+                        if (unsubscribePersonal) unsubscribePersonal();
+                        if (unsubscribeGlobal) unsubscribeGlobal();
+                        setupScoreListeners(firebaseConfig.projectId); 
+                    } else {
+                        console.log("User is not signed in. Attempting to sign in anonymously.");
+                        dbConnected = false;
+                        signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
+                    }
+                });
+
+            } catch (error) {
+                console.error("Critical Firebase initialization error:", error);
+            }
+        }
+        
+        // --- Helper function to escape HTML ---
+        function sanitizeHTML(str) {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        }
+
+        // Sets up the real-time data listeners
+        function setupScoreListeners(appId) {
+            try {
+                // Score Listeners
+                scoreDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                globalScoreDocRef = doc(db, 'artifacts', appId, 'public', 'globalData');
+                
+                unsubscribePersonal = onSnapshot(scoreDocRef, (docSnap) => {
+                    localScore = (docSnap.exists() ? docSnap.data().count : 0) || 0;
+                    scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                }, (error) => console.error("Personal score listener error:", error));
+
+                unsubscribeGlobal = onSnapshot(globalScoreDocRef, (docSnap) => {
+                    globalHighScore = (docSnap.exists() ? docSnap.data().topScore : 0) || 0;
+                    globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                }, (error) => console.error("Global score listener error:", error));
+            } catch (error) {
+                console.error("Firestore score listener setup failed:", error);
+            }
+        }
+        
+        function renderMessages(messages) {
+            chatMessages.innerHTML = '';
+            messages.forEach(msg => {
+                const username = sanitizeHTML(msg.username || 'anonymous');
+                const text = sanitizeHTML(msg.text || '');
+                
+                const msgEl = document.createElement('div');
+                msgEl.innerHTML = `<span class="font-bold text-gray-700">${username}:</span> <span class="text-gray-900">${text}</span>`;
+                chatMessages.appendChild(msgEl);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function activateChatListener() {
+            if (isChatListenerActive) {
+                renderMessages(cachedMessages);
+                return;
+            }
+            if (!dbConnected) return;
+
+            isChatListenerActive = true;
+            console.log("Activating chat listener for the first time.");
+            try {
+                 const appId = "click-the-bart-5a75c"; // Using new project ID
+                 const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+                 const q = query(chatCollectionRef, orderBy("timestamp", "desc"), limit(50));
+                 unsubscribeChat = onSnapshot(q, (snapshot) => {
+                    const messages = [];
+                    snapshot.forEach(doc => messages.push(doc.data()));
+                    cachedMessages = messages.reverse();
+                    renderMessages(cachedMessages);
+                 }, (error) => console.error("Chat listener error:", error));
+                 deleteOldMessages();
+            } catch(error) {
+                console.error("Chat listener setup failed:", error);
+            }
+        }
+        
+        // --- Chat Functions ---
+        async function deleteOldMessages() {
+            if (!dbConnected) return;
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            const appId = "click-the-bart-5a75c"; // Using new project ID
+            const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+            const q = query(chatCollectionRef, where("timestamp", "<", fiveMinutesAgo));
+            
+            try {
+                const snapshot = await getDocs(q);
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    console.log(`Deleting old message: ${doc.id}`);
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                if (deletePromises.length > 0) {
+                    await Promise.all(deletePromises);
+                    console.log(`${deletePromises.length} old messages deleted.`);
+                }
+            } catch (error) {
+                console.error("Error deleting old messages:", error);
+            }
+        }
+
+        async function sendMessage() {
+            if (sendButton.disabled) return;
+            const text = chatInput.value.trim();
+
+            if (!text) return;
+
+            if (!dbConnected) {
+                console.warn("Database not connected. Cannot send message.");
+                const originalText = sendButton.textContent;
+                sendButton.textContent = "Offline";
+                setTimeout(() => { sendButton.textContent = originalText; }, 2000);
+                return;
+            }
+
+            const originalButtonText = sendButton.textContent;
+            sendButton.disabled = true;
+            sendButton.textContent = '...';
+
+            const appId = "click-the-bart-5a75c"; // Using new project ID
+            const chatCollectionRef = collection(db, 'artifacts', appId, 'public', 'chat', 'messages');
+            
+            const messageData = {
+                username: chatUsername,
+                text: text,
+                timestamp: serverTimestamp(),
+                userId: userId
+            };
+
+            try {
+                await addDoc(chatCollectionRef, messageData);
+                chatInput.value = '';
+                deleteOldMessages(); 
+            } catch (error) {
+                console.error("Error sending message:", error);
+                sendButton.textContent = 'Failed';
+                setTimeout(() => {
+                    sendButton.disabled = false;
+                    sendButton.textContent = originalButtonText;
+                }, 2000);
+                return;
+            }
+
+            sendButton.disabled = false;
+            sendButton.textContent = originalButtonText;
+        }
+
+        // --- Event Listeners ---
+        if (startButton) {
+            startButton.disabled = false; 
+            startButton.addEventListener('click', () => {
+                startButton.disabled = true; 
+                titleScreen.classList.add('animate-fly-up');
+                setTimeout(() => {
+                    titleScreen.style.display = 'none';
+                    gameContent.classList.remove('hidden');
+                    gameContent.classList.add('animate-fade-in');
+                    topRightUI.classList.remove('hidden');
+                    topRightUI.classList.add('animate-fade-in');
+                    chatPopupContainer.classList.remove('hidden'); // Show chat popup
+                    chatPopupContainer.classList.add('animate-fade-in');
+                    
+                    const bartImage = document.getElementById('bartImage');
+                    if (bartImage) addBartClickListener(bartImage);
+
+                }, 800);
+            });
+        }
+
+        function addBartClickListener(element) {
+            element.addEventListener('click', async () => {
+                if (isClickLocked) return;
+                const currentTime = Date.now();
+                
+                // Simple rate limiting
+                if (currentTime - lastClickTime < MIN_CLICK_DELAY) return;
+
+                isClickLocked = true;
+                lastClickTime = currentTime;
+                clickSound.currentTime = 0;
+                clickSound.play().catch(e => console.error("Audio play failed:", e));
+                const bartImage = document.getElementById('bartImage');
+                if (bartImage && bartImage.tagName === 'IMG') {
+                    bartImage.classList.add('clicked');
+                    setTimeout(() => bartImage.classList.remove('clicked'), 300);
+                }
+                localScore++;
+                scoreCounter.textContent = `Your Clicks: ${localScore}`;
+                if (localScore > 0 && localScore % 100 === 0) {
+                    bartWrapper.classList.add('do-flip');
+                    setTimeout(() => bartWrapper.classList.remove('do-flip'), 800);
+                    clickSound.addEventListener('ended', () => { isClickLocked = false; }, { once: true });
+                } else {
+                    setTimeout(() => { isClickLocked = false; }, 300);
+                }
+                if (dbConnected && scoreDocRef && globalScoreDocRef) {
+                    setDoc(scoreDocRef, { count: localScore }, { merge: true });
+                    if (localScore > globalHighScore) {
+                        globalHighScore = localScore;
+                        globalHighScoreEl.textContent = `Top Score: ${globalHighScore}`;
+                        setDoc(globalScoreDocRef, { topScore: localScore });
+                    }
+                }
+            });
+        }
+        
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Settings Modal Listeners
+        settingsButton.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+        closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
+        
+        usernameInput.addEventListener('input', (e) => {
+            // Prevent special characters
+            const sanitized = e.target.value.replace(/[^a-zA-Z0-9 ]/g, '');
+            e.target.value = sanitized;
+        });
+        usernameInput.addEventListener('change', (e) => {
+            const newName = e.target.value.trim();
+            chatUsername = newName || 'anonymous';
+            localStorage.setItem('bartClickerUsername', chatUsername);
+        });
+
+        soundUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'audio/mpeg') {
+                const soundURL = URL.createObjectURL(file);
+                clickSound = new Audio(soundURL);
+                clickSound.preload = 'auto';
+            }
+        });
+
+        // Chat pop-up listener to activate on hover
+        chatPopupContainer.addEventListener('mouseenter', activateChatListener);
+
+
+        // --- Initialize Game on Load ---
+        loadSettings();
+        initializeFirebase();
+
+    </script>
+</body>
+</html>
