@@ -20,7 +20,6 @@ const error = document.getElementById("uv-error");
  */
 const errorCode = document.getElementById("uv-error-code");
 
-// Attach form submit event listener
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -35,9 +34,3 @@ form.addEventListener("submit", async (event) => {
   const url = search(address.value, searchEngine.value);
   location.href = __uv$config.prefix + __uv$config.encodeUrl(url);
 });
-
-// Autofill function with auto-submit
-function autofill(url) {
-  address.value = url;
-  form.requestSubmit(); // Automatically submit the form
-}
