@@ -10,25 +10,94 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            font-family: Arial, sans-serif;
         }
         header {
             padding: 10px;
-            text-align: center;
             background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+        .main-controls {
+            display: flex;
+            align-items: center;
         }
         input[type="text"] {
             padding: 5px;
-            width: 80%;
+            width: 60%;
             max-width: 400px;
+            margin-right: 10px;
+            box-sizing: border-box;
         }
         button {
             padding: 5px 10px;
+            margin: 0 5px;
             background-color: #ddd;
+            border: none;
+            cursor: pointer;
+            width: 90px;
+            height: 25px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background-color: #ccc;
+        }
+        #watermark {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+            opacity: 0.7;
+        }
+        .secondary-controls {
+            position: absolute;
+            top: 30px;
+            right: 10px;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+        }
+        #tabContainer {
+            display: flex;
+            overflow-x: auto;
+            background-color: #e0e0e0;
+            padding: 5px 0;
+        }
+        .tab {
+            padding: 5px 10px;
+            margin-right: 5px;
+            background-color: #bbb;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active {
+            background-color: #999;
+            color: white;
+        }
+        #iframeContainer {
+            flex: 1;
+            position: relative;
         }
         iframe {
-            flex: 1;
             width: 100%;
+            height: 100%;
             border: none;
+        }
+        #devTools {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+            overflow: auto;
         }
         #error {
             color: red;
@@ -39,37 +108,33 @@
     </style>
 </head>
 <body>
-    Newest update: 12:29 8/13/25
     <header>
-        <input type="text" id="urlInput" placeholder="Enter URL or search...">
-        <button onclick="accessWebsite()">Go</button>
-        <div id="error"></div>
+        <div class="main-controls">
+            <input type="text" id="urlInput" placeholder="Enter URL or search...">
+            <button onclick="addTab()">New Tab</button>
+        </div>
+        <div id="watermark">LWProxy created by errorrail#0 \n            
+            Newest update: 12:50 AM 8/13/2025
+            /div>
+        <div class="secondary-controls">
+            <button onclick="bookmark()">Bookmark</button>
+            <button onclick="toggleDevTools()">Dev Tools</button>
+        </div>
     </header>
-    <iframe id="proxyFrame"></iframe>
+    <div id="tabContainer"></div>
+    <div id="iframeContainer">
+        <iframe id="proxyFrame"></iframe>
+        <div id="devTools"></div>
+    </div>
+    <div id="error"></div>
 
     <script>
-        window.addEventListener('load', function() {
-            const hiddenFrame = document.createElement('iframe');
-            hiddenFrame.style.display = 'none';
-            hiddenFrame.src = 'https://cors-anywhere.herokuapp.com/corsdemo';
-            document.body.appendChild(hiddenFrame);
+        let tabs = [];
+        let activeTabIndex = -1;
 
-            setTimeout(() => {
-                hiddenFrame.remove();
-            }, 5000);
-        });
-
-        function accessWebsite() {
+        function addTab() {
             const urlInput = document.getElementById('urlInput').value;
-            const proxyFrame = document.getElementById('proxyFrame');
-            const errorDiv = document.getElementById('error');
-
-            if (!urlInput) {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = 'Please enter a URL or search term.';
-                proxyFrame.style.display = 'none';
-                return;
-            }
+            if (!urlInput) return;
 
             let cleanUrl = urlInput.trim();
             if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
@@ -78,40 +143,66 @@
                 cleanUrl = 'https://' + cleanUrl;
             }
 
-            let corsProxy = 'https://api.codetabs.com/v1/proxy?quest=';
-            let proxyUrl = corsProxy + encodeURIComponent(cleanUrl);
+            tabs.push({ url: cleanUrl, title: cleanUrl.split('/')[2] || 'New Tab' });
+            activeTabIndex = tabs.length - 1;
+            updateTabs();
+            loadTab(activeTabIndex);
+        }
+
+        function updateTabs() {
+            const tabContainer = document.getElementById('tabContainer');
+            tabContainer.innerHTML = '';
+            tabs.forEach((tab, index) => {
+                const tabElement = document.createElement('div');
+                tabElement.className = 'tab' + (index === activeTabIndex ? ' active' : '');
+                tabElement.textContent = tab.title;
+                tabElement.onclick = () => switchTab(index);
+                tabContainer.appendChild(tabElement);
+            });
+        }
+
+        function switchTab(index) {
+            if (index >= 0 && index < tabs.length) {
+                activeTabIndex = index;
+                updateTabs();
+                loadTab(activeTabIndex);
+            }
+        }
+
+        function loadTab(index) {
+            const proxyFrame = document.getElementById('proxyFrame');
+            const errorDiv = document.getElementById('error');
+            const url = tabs[index].url;
+
+            let corsProxy = 'https://everyorigin.jwvbremen.nl/';
+            let proxyUrl = corsProxy + encodeURIComponent(url);
 
             errorDiv.style.display = 'none';
+            proxyFrame.src = proxyUrl;
             proxyFrame.style.display = 'block';
 
-            // Fetch content and inject into iframe
-            fetch(proxyUrl)
-                .then(response => response.text())
-                .then(html => {
-                    const iframeDoc = proxyFrame.contentDocument || proxyFrame.contentWindow.document;
-                    iframeDoc.open();
-                    iframeDoc.write(html);
-                    iframeDoc.close();
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                    // Fallback to api.allorigins.win
-                    corsProxy = 'https://api.allorigins.win/raw?url=';
-                    proxyUrl = corsProxy + encodeURIComponent(cleanUrl);
-                    fetch(proxyUrl)
-                        .then(response => response.text())
-                        .then(html => {
-                            const iframeDoc = proxyFrame.contentDocument || proxyFrame.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write(html);
-                            iframeDoc.close();
-                        })
-                        .catch(() => {
-                            errorDiv.style.display = 'block';
-                            errorDiv.textContent = 'Failed to load. Check URL or network.';
-                            proxyFrame.style.display = 'none';
-                        });
-                });
+            // Handle failure
+            proxyFrame.onerror = () => {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Failed to load. This proxy may be blocked or unavailable. Consider setting up a local proxy (e.g., using a Cloudflare Worker or Node.js server).';
+                proxyFrame.style.display = 'none';
+            };
+        }
+
+        function bookmark() {
+            const urlInput = document.getElementById('urlInput').value;
+            if (urlInput) {
+                alert('Bookmarked: ' + urlInput);
+            }
+        }
+
+        function toggleDevTools() {
+            const devTools = document.getElementById('devTools');
+            devTools.style.display = devTools.style.display === 'block' ? 'none' : 'block';
+            if (devTools.style.display === 'block') {
+                const iframeDoc = document.getElementById('proxyFrame').contentDocument || document;
+                devTools.innerHTML = '<pre>' + iframeDoc.documentElement.outerHTML.substring(0, 10000) + '</pre>';
+            }
         }
     </script>
 </body>
