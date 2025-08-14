@@ -47,14 +47,12 @@
     <iframe id="proxyFrame"></iframe>
 
     <script>
-        // Auto-request access to CORS Anywhere demo server on page load (optional, can be removed)
         window.addEventListener('load', function() {
             const hiddenFrame = document.createElement('iframe');
             hiddenFrame.style.display = 'none';
             hiddenFrame.src = 'https://cors-anywhere.herokuapp.com/corsdemo';
             document.body.appendChild(hiddenFrame);
 
-            // Remove the iframe after a short delay
             setTimeout(() => {
                 hiddenFrame.remove();
             }, 5000);
@@ -79,28 +77,40 @@
                 cleanUrl = 'https://' + cleanUrl;
             }
 
-            // Use codetabs as primary CORS proxy
             let corsProxy = 'https://api.codetabs.com/v1/proxy?quest=';
             let proxyUrl = corsProxy + encodeURIComponent(cleanUrl);
 
             errorDiv.style.display = 'none';
-            proxyFrame.src = proxyUrl;
             proxyFrame.style.display = 'block';
 
-            // Handle iframe load errors and fallback to api.allorigins.win
-            proxyFrame.onerror = () => {
-                corsProxy = 'https://api.allorigins.win/raw?url=';
-                proxyUrl = corsProxy + encodeURIComponent(cleanUrl);
-                proxyFrame.src = proxyUrl;
-
-                setTimeout(() => {
-                    if (proxyFrame.contentWindow.location.href === 'about:blank') {
-                        errorDiv.style.display = 'block';
-                        errorDiv.textContent = 'Failed to load. Check URL or network.';
-                        proxyFrame.style.display = 'none';
-                    }
-                }, 2000);
-            };
+            // Fetch content and inject into iframe
+            fetch(proxyUrl)
+                .then(response => response.text())
+                .then(html => {
+                    const iframeDoc = proxyFrame.contentDocument || proxyFrame.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(html);
+                    iframeDoc.close();
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    // Fallback to api.allorigins.win
+                    corsProxy = 'https://api.allorigins.win/raw?url=';
+                    proxyUrl = corsProxy + encodeURIComponent(cleanUrl);
+                    fetch(proxyUrl)
+                        .then(response => response.text())
+                        .then(html => {
+                            const iframeDoc = proxyFrame.contentDocument || proxyFrame.contentWindow.document;
+                            iframeDoc.open();
+                            iframeDoc.write(html);
+                            iframeDoc.close();
+                        })
+                        .catch(() => {
+                            errorDiv.style.display = 'block';
+                            errorDiv.textContent = 'Failed to load. Check URL or network.';
+                            proxyFrame.style.display = 'none';
+                        });
+                });
         }
     </script>
 </body>
