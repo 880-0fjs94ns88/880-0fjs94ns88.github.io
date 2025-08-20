@@ -83,10 +83,22 @@
             background-color: #bbb;
             cursor: pointer;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
         }
         .tab.active {
             background-color: #999;
             color: white;
+        }
+        .close-btn {
+            margin-left: 5px;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .close-btn:hover {
+            color: #f00;
         }
         #iframeContainer {
             flex: 1;
@@ -106,13 +118,72 @@
             height: 200px;
             background-color: #fff;
             border-top: 1px solid #ccc;
-            overflow: auto;
+            overflow-y: auto;
+            font-size: 12px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .log-entry {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .log-entry-text {
+            flex: 1;
+            word-break: break-all;
+        }
+        .log-download-btn {
+            margin-left: 10px;
+            padding: 2px 8px;
+            font-size: 10px;
+            background-color: #ddd;
+            border: none;
+            cursor: pointer;
+        }
+        .log-download-btn:disabled {
+            background-color: #eee;
+            cursor: not-allowed;
+        }
+        .log-download-btn:hover:not(:disabled) {
+            background-color: #ccc;
         }
         #error {
             color: red;
             text-align: center;
             padding: 5px;
             display: none;
+        }
+        #bookmarkList {
+            display: none;
+            position: absolute;
+            top: 65px;
+            right: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+        .bookmark-item {
+            padding: 2px 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bookmark-item:hover {
+            background-color: #f1f1f1;
+        }
+        .bookmark-close {
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .bookmark-close:hover {
+            color: #f00;
         }
     </style>
 </head>
@@ -123,93 +194,273 @@
             <button onclick="addTab()">New Tab</button>
         </div>
         <div id="watermark1">LWProxy by errorrail#0</div>
-        <div id="watermark2">Newest update: <a href="https://example.com/changelogs/index.html">Changelog</a></div>
+        <div id="watermark2">Newest update: <a href="/proxy/changelogs/">Changelog</a></div>
         <div class="secondary-controls">
-            <button onclick="bookmark()">Bookmark</button>
+            <button id="bookmarkBtn" onclick="toggleBookmarks()">Bookmarks</button>
             <button onclick="toggleDevTools()">Dev Tools</button>
         </div>
     </header>
     <div id="tabContainer"></div>
-    <div id="iframeContainer">
-        <iframe id="proxyFrame"></iframe>
-        <div id="devTools"></div>
-    </div>
+    <div id="iframeContainer"></div>
     <div id="error"></div>
+    <div id="bookmarkList"></div>
 
     <script>
         let tabs = [];
         let activeTabIndex = -1;
+        let eventLogs = [];
+        let responseContents = [];
 
-        function addTab() {
-            const urlInput = document.getElementById('urlInput').value;
-            if (!urlInput) return;
+        // Proxy URL
+        const proxyUrlBase = 'https://api.codetabs.com/v1/proxy?quest=';
 
-            let cleanUrl = urlInput.trim();
-            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-                cleanUrl = 'https://www.google.com/search?q=' + encodeURIComponent(cleanUrl);
-            } else if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-                cleanUrl = 'https://' + cleanUrl;
+        function logEvent(message, content = null, url = null, proxyUrl = null) {
+            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+            const logIndex = eventLogs.length;
+            eventLogs.push({ message, timestamp, content, url, proxyUrl });
+            updateDevTools();
+            return logIndex;
+        }
+
+        function updateDevTools() {
+            const devTools = document.getElementById('devTools');
+            if (devTools.style.display === 'block') {
+                devTools.innerHTML = eventLogs.map((log, index) => `
+                    <div class="log-entry">
+                        <span class="log-entry-text">[${log.timestamp}] ${log.message}</span>
+                        ${log.content ? `<button class="log-download-btn" onclick="downloadContent(${index})">Download</button>` : ''}
+                    </div>
+                `).join('');
+                devTools.scrollTop = devTools.scrollHeight;
+            }
+        }
+
+        function downloadContent(logIndex) {
+            const log = eventLogs[logIndex];
+            if (log.content) {
+                const blob = new Blob([log.content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = (log.url.split('/')[2] || 'page') + '.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                logEvent(`Downloaded content for: ${log.url} (Proxy: ${log.proxyUrl})`);
+            }
+        }
+
+        function addTab(url) {
+            let cleanUrl = url ? url.trim() : document.getElementById('urlInput').value.trim();
+            logEvent(`Attempting to add tab with URL: ${cleanUrl || 'empty'}`);
+            if (!cleanUrl) {
+                cleanUrl = 'https://www.google.com'; // Default to Google if empty
+                logEvent(`No URL provided, defaulting to: ${cleanUrl}`);
             }
 
-            tabs.push({ url: cleanUrl, title: cleanUrl.split('/')[2] || 'New Tab' });
+            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+                cleanUrl = 'https://www.google.com/search?q=' + encodeURIComponent(cleanUrl);
+                logEvent(`Converted to search URL: ${cleanUrl}`);
+            }
+
+            tabs.push({ url: cleanUrl, title: cleanUrl.split('/')[2] || 'New Tab', iframe: null });
             activeTabIndex = tabs.length - 1;
+            logEvent(`Added tab to array: ${cleanUrl}, index: ${activeTabIndex}`);
             updateTabs();
             loadTab(activeTabIndex);
         }
 
         function updateTabs() {
             const tabContainer = document.getElementById('tabContainer');
+            const iframeContainer = document.getElementById('iframeContainer');
+            logEvent('Updating tabs');
+            if (!tabContainer || !iframeContainer) {
+                logEvent('Error: tabContainer or iframeContainer not found');
+                return;
+            }
             tabContainer.innerHTML = '';
+            iframeContainer.innerHTML = '';
             tabs.forEach((tab, index) => {
+                logEvent(`Processing tab ${index}: ${tab.url}`);
                 const tabElement = document.createElement('div');
                 tabElement.className = 'tab' + (index === activeTabIndex ? ' active' : '');
-                tabElement.textContent = tab.title;
-                tabElement.onclick = () => switchTab(index);
+                tabElement.innerHTML = `${tab.title}<span class="close-btn" onclick="closeTab(${index})">&times;</span>`;
+                tabElement.onclick = (e) => {
+                    if (e.target.className !== 'close-btn') switchTab(index);
+                };
                 tabContainer.appendChild(tabElement);
+                if (index === activeTabIndex && !tab.iframe) {
+                    logEvent(`Creating iframe for tab ${index}`);
+                    const iframe = document.createElement('iframe');
+                    iframe.name = `iframe_${index}`;
+                    iframeContainer.appendChild(iframe);
+                    tab.iframe = iframe;
+                    logEvent(`Iframe created for tab ${index}`);
+                }
             });
+            logEvent('Tabs updated successfully');
         }
 
         function switchTab(index) {
             if (index >= 0 && index < tabs.length) {
                 activeTabIndex = index;
+                logEvent(`Switched to tab: ${tabs[index].url}`);
                 updateTabs();
                 loadTab(activeTabIndex);
             }
         }
 
-        function loadTab(index) {
-            const proxyFrame = document.getElementById('proxyFrame');
+        function closeTab(index) {
+            const closedUrl = tabs[index].url;
+            tabs.splice(index, 1);
+            if (activeTabIndex === index) {
+                activeTabIndex = tabs.length > 0 ? (index > 0 ? index - 1 : 0) : -1;
+            } else if (activeTabIndex > index) {
+                activeTabIndex--;
+            }
+            logEvent(`Closed tab: ${closedUrl}`);
+            updateTabs();
+            if (activeTabIndex >= 0) {
+                loadTab(activeTabIndex);
+            } else {
+                document.getElementById('iframeContainer').innerHTML = '';
+                document.getElementById('error').style.display = 'none';
+                logEvent('No tabs remaining; iframe cleared');
+            }
+        }
+
+        async function loadTab(index) {
             const errorDiv = document.getElementById('error');
             const url = tabs[index].url;
-
-            let corsProxy = 'https://everyorigin.jwvbremen.nl/get?url=';
-            let proxyUrl = corsProxy + encodeURIComponent(url);
+            const iframe = tabs[index].iframe;
 
             errorDiv.style.display = 'none';
-            proxyFrame.src = proxyUrl;
-            proxyFrame.style.display = 'block';
+            logEvent(`Loading URL: ${url}`);
 
-            // Handle failure
-            proxyFrame.onerror = () => {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = 'Failed to load. This proxy may be blocked or unavailable. Consider setting up a local proxy (e.g., using a Cloudflare Worker or Node.js server).';
-                proxyFrame.style.display = 'none';
-            };
+            if (url.includes('google.com')) {
+                iframe.src = url;
+                iframe.onload = () => {
+                    logEvent(`Successfully loaded: ${url}`);
+                    setupLinkHandler(iframe);
+                };
+                iframe.onerror = () => {
+                    logEvent(`Failed to load: ${url} (direct load failed)`);
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = `Failed to load: ${url}. Check internet or clear cache (Settings > Privacy and Security > Clear browsing data).`;
+                };
+            } else {
+                const proxyUrl = proxyUrlBase + encodeURIComponent(url);
+                try {
+                    const response = await fetch(proxyUrl, { timeout: 10000 });
+                    const result = await response.text();
+                    if (response.ok && result) {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(result, 'text/html');
+                        const links = doc.querySelectorAll('a[href]');
+                        links.forEach(link => {
+                            const href = link.getAttribute('href');
+                            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                                const absoluteUrl = new URL(href, url).href;
+                                link.setAttribute('href', `${proxyUrlBase}${encodeURIComponent(absoluteUrl)}`);
+                            }
+                        });
+                        const resources = doc.querySelectorAll('img[src], script[src], link[href], source[src], video[src], audio[src]');
+                        resources.forEach(resource => {
+                            const attr = resource.hasAttribute('src') ? 'src' : 'href';
+                            const urlValue = resource.getAttribute(attr);
+                            if (urlValue && !urlValue.startsWith('data:') && !urlValue.startsWith('javascript:')) {
+                                const absoluteUrl = new URL(urlValue, url).href;
+                                resource.setAttribute(attr, `${proxyUrlBase}${encodeURIComponent(absoluteUrl)}`);
+                                if (resource.tagName === 'IMG') {
+                                    logEvent(`Image requested: ${absoluteUrl} (Proxy: ${proxyUrlBase}${encodeURIComponent(absoluteUrl)})`);
+                                }
+                            }
+                        });
+                        const modifiedHtml = doc.documentElement.outerHTML;
+                        iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(modifiedHtml);
+                        iframe.onload = () => {
+                            logEvent(`Successfully loaded: ${url} (Proxy: ${proxyUrl})`, modifiedHtml, url, proxyUrl);
+                            setupLinkHandler(iframe);
+                        };
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } catch (error) {
+                    logEvent(`Failed to load: ${url} (Proxy: ${proxyUrl}) (${error.message})`);
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = `Failed to load: ${url}. Check proxy status or try a different URL.`;
+                }
+            }
+        }
+
+        function setupLinkHandler(iframe) {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc) {
+                iframeDoc.addEventListener('click', async (e) => {
+                    const link = e.target.closest('a');
+                    if (link && link.href) {
+                        e.preventDefault();
+                        const absoluteUrl = link.href;
+                        logEvent(`Link clicked: ${absoluteUrl}`);
+                        const newTab = { url: absoluteUrl, title: absoluteUrl.split('/')[2] || 'New Tab', iframe: null };
+                        tabs.push(newTab);
+                        activeTabIndex = tabs.length - 1;
+                        logEvent(`Added new tab: ${absoluteUrl}`);
+                        updateTabs();
+                        loadTab(activeTabIndex);
+                    }
+                }, true);
+            }
         }
 
         function bookmark() {
             const urlInput = document.getElementById('urlInput').value;
             if (urlInput) {
+                let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+                bookmarks.push(urlInput);
+                localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+                logEvent(`Bookmarked URL: ${urlInput}`);
                 alert('Bookmarked: ' + urlInput);
+                updateBookmarkList();
             }
+        }
+
+        function toggleBookmarks() {
+            const bookmarkList = document.getElementById('bookmarkList');
+            bookmarkList.style.display = bookmarkList.style.display === 'block' ? 'none' : 'block';
+            if (bookmarkList.style.display === 'block') {
+                updateBookmarkList();
+            }
+        }
+
+        function updateBookmarkList() {
+            const bookmarkList = document.getElementById('bookmarkList');
+            const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+            bookmarkList.innerHTML = bookmarks.map((url, index) => `
+                <div class="bookmark-item" data-index="${index}">
+                    <span onclick="addTab('${url}')">${url}</span>
+                    <span class="bookmark-close" onclick="removeBookmark(${index})">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        function removeBookmark(index) {
+            let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+            bookmarks.splice(index, 1);
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            logEvent(`Removed bookmark at index: ${index}`);
+            updateBookmarkList();
         }
 
         function toggleDevTools() {
             const devTools = document.getElementById('devTools');
             devTools.style.display = devTools.style.display === 'block' ? 'none' : 'block';
             if (devTools.style.display === 'block') {
-                const iframeDoc = document.getElementById('proxyFrame').contentDocument || document;
-                devTools.innerHTML = '<pre>' + iframeDoc.documentElement.outerHTML.substring(0, 10000) + '</pre>';
+                updateDevTools();
+                logEvent('Opened Dev Tools');
+            } else {
+                logEvent('Closed Dev Tools');
             }
         }
     </script>
