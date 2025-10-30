@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jeff's Quick Redirector</title>
+</head>
+<body>
+    <p>enter website</p>
+    <input type="text" id="urlInput" placeholder="https://paypal.me/errorrail" style="width: 300px;">
+    <button onclick="redirectToSite()">Go!</button>
+
+    <script>
+        function redirectToSite() {
+            var url = document.getElementById("urlInput").value;
+            if (url) {
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    url = "https://" + url;
+                }
+                window.location.href = url;
+            } else {
+                alert("enter a url dummy");
+            }
+        }
+    </script>
+</body>
+</html>
