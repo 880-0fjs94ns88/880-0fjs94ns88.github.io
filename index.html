@@ -1,1 +1,37 @@
-Welcome!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>welcome!!!</title>
+    <script>
+        const userAgent = navigator.userAgent;
+        if (userAgent.includes('WindowsPowerShell') || userAgent.includes('PowerShell')) {
+            document.open();
+            document.write(`
+Write-Host "Hello from PowerShell!" -ForegroundColor Green
+Write-Host "You are accessing this page from PowerShell" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "User Agent: ${userAgent}" -ForegroundColor Yellow
+Write-Host ""
+$PSVersionTable
+function Get-PageInfo {
+    Write-Host "This page detects PowerShell requests!" -ForegroundColor Magenta
+    Write-Host "You can add any PowerShell commands here." -ForegroundColor Magenta
+}
+Get-PageInfo
+Write-Host ""
+Write-Host "Feel free to modify and use this code!" -ForegroundColor Green`);
+            document.close();
+        }
+    </script>
+</head>
+<body>
+    <h1>welcome to my page :3</h1>
+    <p>time till page is done: Dec 30, 3542</p>
+
+    <script>
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+    </script>
+</body>
+</html>
