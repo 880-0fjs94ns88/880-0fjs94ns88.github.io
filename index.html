@@ -3,35 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>welcome!!!</title>
-    <script>
-        const userAgent = navigator.userAgent;
-        if (userAgent.includes('WindowsPowerShell') || userAgent.includes('PowerShell')) {
-            document.open();
-            document.write(`
-Write-Host "Hello from PowerShell!" -ForegroundColor Green
-Write-Host "You are accessing this page from PowerShell" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "User Agent: ${userAgent}" -ForegroundColor Yellow
-Write-Host ""
-$PSVersionTable
-function Get-PageInfo {
-    Write-Host "This page detects PowerShell requests!" -ForegroundColor Magenta
-    Write-Host "You can add any PowerShell commands here." -ForegroundColor Magenta
-}
-Get-PageInfo
-Write-Host ""
-Write-Host "Feel free to modify and use this code!" -ForegroundColor Green`);
-            document.close();
+    <title>hi</title>
+    <style>
+        body.powershell {
+            background: #012456;
+            display: block;
+            padding: 0;
         }
-    </script>
+
+        .browser-content {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .powershell-content {
+            display: none;
+            background: #012456;
+            color: #eee;
+            font-family: 'Consolas', 'Courier New', monospace;
+            padding: 20px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        body.powershell .browser-content {
+            display: none;
+        }
+
+        body.powershell .powershell-content {
+            display: block;
+        }
+        .ps-comment { color: #6A9955; }
+        .ps-keyword { color: #569CD6; }
+        .ps-string { color: #CE9178; }
+        .ps-function { color: #DCDCAA; }
+    </style>
 </head>
 <body>
-    <h1>welcome to my page :3</h1>
-    <p>time till page is done: Dec 30, 3542</p>
+    <div class="powershell-content" id="psContent"># PowerShell Script
+# This content is served when PowerShell accesses the page
+
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host "  Welcome to PowerShell Detector!  " -ForegroundColor Green
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "✓ PowerShell detected!" -ForegroundColor Green
+Write-Host "User Agent: $env:POWERSHELL_DISTRIBUTION_CHANNEL" -ForegroundColor Yellow
+Write-Host ""
+
+# Display PowerShell version
+Write-Host "PowerShell Version Information:" -ForegroundColor Magenta
+$PSVersionTable | Format-Table -AutoSize
+
+# Example: Get system information
+Write-Host "`nSystem Information:" -ForegroundColor Magenta
+Write-Host "Computer Name: $env:COMPUTERNAME" -ForegroundColor White
+Write-Host "Username: $env:USERNAME" -ForegroundColor White
+Write-Host "OS: $([System.Environment]::OSVersion.VersionString)" -ForegroundColor White
+
+# Example function
+function Get-PageInfo {
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "This page detects PowerShell requests!" -ForegroundColor Green
+    Write-Host "You can add any PowerShell commands here." -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Cyan
+}
+
+Get-PageInfo
+
+# Example of getting content
+Write-Host "`nExample: Fetch web content" -ForegroundColor Magenta
+Write-Host '$response = Invoke-WebRequest -Uri "https://example.com"' -ForegroundColor Gray
+Write-Host '$response.StatusCode' -ForegroundColor Gray
+
+Write-Host "`n✓ Script completed successfully!" -ForegroundColor Green
+Write-Host "Feel free to modify and use this code!" -ForegroundColor Yellow</div>
 
     <script>
-        document.getElementById('userAgent').textContent = navigator.userAgent;
+        const userAgent = navigator.userAgent;
+        
+        // Check if PowerShell is accessing the page
+        if (userAgent.includes('WindowsPowerShell') || userAgent.includes('PowerShell')) {
+            document.body.className = 'powershell';
+            document.title = 'PowerShell Script';
+        } else {
+            document.getElementById('userAgent').textContent = userAgent;
+        }
     </script>
 </body>
 </html>
